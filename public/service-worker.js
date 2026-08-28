@@ -1,4 +1,4 @@
-const CACHE_NAME = 'boutik-safe-v5';
+const CACHE_NAME = 'boutik-safe-v6';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -17,28 +17,21 @@ const CORE_ASSETS = [
   './images/construction.svg',
   './images/machines.svg',
   './images/beaute.svg',
-  './images/services.svg'
+  './images/services.svg',
+  './vendor/exceljs.min.js',
+  './vendor/chart.umd.min.js',
+  './vendor/jspdf.umd.min.js',
+  './vendor/jspdf.plugin.autotable.min.js'
 ];
-const CDN_ASSETS = [
-  'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'
-];
+// Toutes les bibliothèques sont désormais servies localement (dossier vendor/,
+// inclus dans l'APK et mis en cache comme n'importe quel autre fichier du site).
+// Plus aucune dépendance à un CDN externe : l'export Excel/PDF fonctionne
+// hors ligne dès la toute première ouverture, même sans connexion initiale.
 
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME)
-      .then(async c => {
-        await c.addAll(CORE_ASSETS);
-        // Bibliothèques externes : mises en cache une par une pour ne pas
-        // bloquer l'installation si l'une d'elles est temporairement injoignable.
-        await Promise.all(CDN_ASSETS.map(url =>
-          fetch(url, { mode: 'cors' })
-            .then(res => res.ok && c.put(url, res))
-            .catch(() => {})
-        ));
-      })
+      .then(c => c.addAll(CORE_ASSETS))
       .then(() => self.skipWaiting())
   );
 });

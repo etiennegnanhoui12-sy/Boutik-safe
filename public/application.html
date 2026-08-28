@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Boutik Safe</title>
-<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="vendor/exceljs.min.js"></script>
+<script src="vendor/chart.umd.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.plugin.autotable.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#17202a}
 body.dark{background:#111827;color:#f3f4f6}header{background:#16a34a;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:30;box-shadow:0 2px 8px #0002}header h1{font-size:21px;margin:0;font-weight:900}
@@ -68,6 +68,7 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 
 <section id="e-rapport" class="ecran">
 <div class="statgrid"><div class="stat big"><small>CA aujourd'hui</small><div class="kpi" id="caJour">0 F</div></div><div class="stat"><small>Ventes</small><strong id="nbJour">0</strong></div><div class="stat"><small>Bénéfice estimé</small><strong id="benefJour">0 F</strong></div></div>
+<div class="carte"><b>📝 Synthèse du jour</b><p id="paragrapheRapport" style="margin:8px 0 0;line-height:1.5"></p></div>
 <div class="carte"><b>📊 Ventes des 7 derniers jours</b><canvas id="graph7" height="180"></canvas></div>
 <button class="btn vert" onclick="exportExcel()">📊 Export Excel complet</button><button class="btn rouge" onclick="exportPDF()">📄 Export PDF complet</button>
 <div id="zoneWhatsApp"></div>
@@ -141,6 +142,7 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <h2>⚙️ Paramètres</h2>
 <div class="carte"><b>Nom de l'entreprise</b><input id="nomEntreprise"><button class="btn vert" onclick="sauverParametres()">💾 Enregistrer</button></div>
 <div class="carte"><b>Seuil d'alerte stock</b><input id="seuilStock" type="number" min="0" step="0.1"><button class="btn vert" onclick="sauverParametres()">Enregistrer</button></div>
+<div class="carte"><b>🗂️ Historique complet des ventes</b><p class="muted" style="margin:4px 0 8px">Exporte, à tout moment, la totalité de l'historique de ventes enregistré depuis le début — distinct du rapport du jour.</p><button class="btn outline" onclick="exportHistorique()">📥 Exporter l'historique (Excel)</button></div>
 <div class="carte"><b>PIN de gestion</b><p class="muted">Le PIN protège le stock, la caisse, les fournisseurs et les paramètres.</p><button class="btn jaune" onclick="changerPin()">🔐 Modifier PIN / mot secret</button><button class="btn outline" onclick="testerNotification()">🔔 Tester notification</button></div>
 <div class="carte"><b>Apparence</b><button class="btn gris" onclick="basculerTheme()">🌙 Mode sombre / clair</button></div>
 </section>
@@ -163,6 +165,8 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <div id="m-mouvement" class="modal"><div class="box"><button class="close" onclick="fermer('m-mouvement')">✕</button><h2 id="mouvTitre">Mouvement</h2><label>Montant</label><input id="mouvMontant" type="number" step="0.01"><label>Motif</label><input id="mouvMotif"><button class="btn vert" onclick="sauverMouvement()">Enregistrer</button></div></div>
 
 <div id="m-fournisseur" class="modal"><div class="box"><button class="close" onclick="fermer('m-fournisseur')">✕</button><h2>Fournisseur</h2><label>Nom</label><input id="fNom"><label>Téléphone</label><input id="fTel"><button class="btn vert" onclick="sauverFournisseur()">Enregistrer</button></div></div>
+
+<div id="m-bienvenue" class="modal"><div class="box"><h2>👋 Bienvenue sur Boutik Safe</h2><p class="muted">Pour personnaliser votre application et vos rapports, indiquez le nom de votre entreprise ou boutique.</p><label>Nom de l'entreprise</label><input id="beNomEntreprise" placeholder="Ex : Boutique Chez Rachel"><button class="btn vert" onclick="validerBienvenue()">✅ Commencer</button></div></div>
 
 <div id="m-dette" class="modal"><div class="box"><button class="close" onclick="fermer('m-dette')">✕</button><h2>Dette fournisseur</h2><label>Fournisseur</label><select id="dFour"></select><label>Montant</label><input id="dMontant" type="number" step="0.01"><label>Motif</label><input id="dMotif"><button class="btn vert" onclick="sauverDette()">Enregistrer</button></div></div>
 
@@ -463,8 +467,54 @@ function totalAchats(){return ventes.reduce((s,v)=>s+v.articles.reduce((z,a)=>z+
 function resultatNet(){return ventes.reduce((s,v)=>s+v.articles.reduce((z,a)=>z+(a.prix-a.achat)*a.quantite,0),0)-totalDepenses()-totalDettes()}
 function jours7(){let out=[];for(let i=6;i>=0;i--){let d=new Date();d.setDate(d.getDate()-i);let k=d.toISOString().slice(0,10);out.push({date:k,ca:ventes.filter(v=>v.date.slice(0,10)===k).reduce((s,v)=>s+v.total,0)})}return out}
 let graph=null;
-function rendreRapport(){let c=calculJour();caJour.textContent=fmt(c.ca);nbJour.textContent=c.vs.length;benefJour.textContent=fmt(c.benef);zoneWhatsApp.innerHTML=`<button class="btn vert" onclick="envoyerRapport()">💬 Envoyer le rapport au patron</button>`;if(graph)graph.destroy();graph=new Chart(document.getElementById("graph7"),{type:"line",data:{labels:jours7().map(x=>x.date.slice(5)),datasets:[{label:"CA",data:jours7().map(x=>x.ca),tension:.3}]},options:{responsive:true,plugins:{legend:{display:false}}}})}
-function envoyerRapport(){let c=calculJour(),msg=`Rapport ${config.nom} — ${today()}\nCA : ${fmt(c.ca)}\nVentes : ${c.vs.length}\nBénéfice estimé : ${fmt(c.benef)}\nRésultat net : ${fmt(resultatNet())}`;window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank")}
+function articlesVendusJour(vs){let m={};vs.forEach(v=>v.articles.forEach(a=>{m[a.nom]=(m[a.nom]||0)+a.quantite}));return Object.entries(m).sort((a,b)=>b[1]-a[1])}
+function produitsProchesPeremption(){let dans14j=Date.now()+14*86400000;return produits.filter(p=>{if(!p.peremption)return false;let d=new Date(p.peremption).getTime();return !isNaN(d)&&d<=dans14j}).sort((a,b)=>new Date(a.peremption)-new Date(b.peremption))}
+function calculPourDate(d){let vs=ventes.filter(v=>v.date.slice(0,10)===d),ca=vs.reduce((s,v)=>s+v.total,0),benef=vs.reduce((s,v)=>s+v.articles.reduce((z,a)=>z+(a.prix-a.achat)*a.quantite,0),0);return{vs,ca,benef}}
+function genererParagraphePourDate(d){let c=calculPourDate(d);let nomE=config.nom||"votre entreprise";let art=articlesVendusJour(c.vs);
+ // Bénéfice non affiché si le prix d'achat n'a pas été renseigné pour au moins un article vendu (donnée manquante)
+ let achatManquant=c.vs.some(v=>v.articles.some(a=>!a.achat||a.achat<=0));
+ let phrase1=`À ${nomE}, le ${d}, nous avons eu à effectuer ${c.vs.length} vente${c.vs.length>1?"s":""} pour un total de ${fmt(c.ca)}`;
+ phrase1+=(!achatManquant&&c.vs.length)?`, réalisant un bénéfice net de ${fmt(c.benef)}.`:".";
+ let phraseDetail=art.length?` Détail des articles vendus : ${art.map(([nom,q])=>nom+" ("+q+")").join(", ")}.`:" Aucun article n'a été vendu ce jour-là.";
+ let phraseTop=art.length?` L'article le plus vendu est « ${art[0][0]} » avec ${art[0][1]} unité${art[0][1]>1?"s":""}.`:"";
+ let peri=produitsProchesPeremption();let phrasePerimes="";
+ if(peri.length){let expires=peri.filter(p=>new Date(p.peremption).getTime()<Date.now());let bientot=peri.filter(p=>new Date(p.peremption).getTime()>=Date.now());
+  let bouts=[];if(expires.length)bouts.push(`déjà périmé${expires.length>1?"s":""} (${expires.map(p=>p.nom).join(", ")})`);
+  if(bientot.length)bouts.push(`en cours de péremption (${bientot.map(p=>p.nom).join(", ")})`);
+  phrasePerimes=` Articles ${bouts.join(" et ")}.`;
+ }
+ let creditsImpayes=credits.filter(x=>!x.paye),totalCredits=creditsImpayes.reduce((s,x)=>s+x.montant,0);
+ let dettesImpayees=dettes.filter(x=>!x.paye),totalDettesF=dettesImpayees.reduce((s,x)=>s+x.montant,0);
+ let phraseDettes="";
+ if(creditsImpayes.length||dettesImpayees.length){
+  let parts=[];
+  if(creditsImpayes.length)parts.push(`créances clients en attente : ${fmt(totalCredits)} (${creditsImpayes.map(x=>x.client).join(", ")})`);
+  if(dettesImpayees.length)parts.push(`dettes fournisseurs en attente : ${fmt(totalDettesF)}`);
+  phraseDettes=` Par ailleurs, ${parts.join(" ; ")}.`;
+ }
+ return{texte:phrase1+phraseDetail+phraseTop+phrasePerimes+phraseDettes,ca:c.ca,benef:c.benef,nbVentes:c.vs.length,meilleurArticle:art[0]?art[0][0]:""};
+}
+function genererParagrapheRapport(){document.getElementById("paragrapheRapport").textContent=genererParagraphePourDate(today()).texte}
+function rendreRapport(){let c=calculJour();caJour.textContent=fmt(c.ca);nbJour.textContent=c.vs.length;benefJour.textContent=fmt(c.benef);genererParagrapheRapport();zoneWhatsApp.innerHTML=`<button class="btn vert" onclick="envoyerRapport()">💬 Envoyer le rapport au patron</button>`;if(graph)graph.destroy();graph=new Chart(document.getElementById("graph7"),{type:"line",data:{labels:jours7().map(x=>x.date.slice(5)),datasets:[{label:"CA",data:jours7().map(x=>x.ca),tension:.3}]},options:{responsive:true,plugins:{legend:{display:false}}}})}
+// Clôture automatique des rapports : comme l'application n'a pas de service en arrière-plan,
+// elle ne peut pas s'exécuter seule à 23h59. Dès la réouverture après minuit, elle détecte
+// le changement de jour et archive automatiquement le rapport de la veille — ce qui revient
+// concrètement à une clôture à 23h59 du point de vue de l'utilisateur.
+function verifierClotureJournaliere(){
+  let dernierJour=get("dernierJourVu",today());
+  if(dernierJour!==today()){
+    let rapport=genererParagraphePourDate(dernierJour);
+    if(rapport.nbVentes>0){
+      let archives=get("rapportsArchives",[]);
+      if(!archives.some(r=>r.date===dernierJour)){
+        archives.push({date:dernierJour,ca:rapport.ca,benef:rapport.benef,nbVentes:rapport.nbVentes,meilleurArticle:rapport.meilleurArticle,texte:rapport.texte});
+        set("rapportsArchives",archives);
+      }
+    }
+    set("dernierJourVu",today());
+  }
+}
+function envoyerRapport(){let par=document.getElementById("paragrapheRapport").textContent;let msg=`📊 Rapport ${config.nom} — ${today()}\n\n${par}\n\nRésultat net cumulé : ${fmt(resultatNet())}`;window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank")}
 function rendreDashboard(){
  let c=calculJour(),top=ventes.flatMap(v=>v.articles).reduce((a,x)=>{a[x.nom]=(a[x.nom]||0)+x.quantite;return a},{});
  let tops=Object.entries(top).sort((a,b)=>b[1]-a[1]).slice(0,5);dashboardStats.innerHTML=`<div class="stat big"><small>CA total</small><div class="kpi">${fmt(ventes.reduce((s,v)=>s+v.total,0))}</div></div><div class="stat"><small>Profit</small><strong>${fmt(ventes.reduce((s,v)=>s+v.articles.reduce((z,a)=>z+(a.prix-a.achat)*a.quantite,0),0))}</strong></div><div class="stat"><small>Résultat net</small><strong>${fmt(resultatNet())}</strong></div><div class="stat"><small>Dettes fournisseurs</small><strong>${fmt(totalDettes())}</strong></div><div class="stat"><small>Dépenses</small><strong>${fmt(totalDepenses())}</strong></div>`;topProduits.innerHTML="<b>🏆 Top produits</b>"+(tops.length?tops.map((x,i)=>`<p>${i+1}. ${x[0]} — ${x[1]} unité(s)</p>`).join(""):"<p class='muted'>Aucune vente</p>");dashAlertes.innerHTML=produits.filter(p=>p.stock<=Number(config.seuil)).map(p=>`<div class="carte danger">⚠️ Stock faible : ${p.nom} (${p.stock})</div>`).join("")}
@@ -485,10 +535,43 @@ async function importerFichier(){let f=fichierImport.files[0];if(!f)return;try{l
 function ajouterImport(o){let nom=o.nom||o.produit;if(!nom)return;let nomTexte=String(nom), em=String(o.emoji||"").trim()||emojiProduit(nomTexte);
   let p={id:id(),nom:nomTexte,prix:Number(o.prix_vente||o.prix||0),achat:Number(o.prix_achat||o.achat||0),stock:Number(o.stock||0),codeBarre:String(o.code_barre||o.codebarre||""),emoji:em,photo:String(o.photo||""),peremption:o.peremption||""};produits.push(p)}
 function exportReleveClient(){let q=clientRecherche.value.trim().toLowerCase();let rows=ventes.filter(v=>v.articles.some(a=>a.nom.toLowerCase().includes(q)));if(!q)return;let {jsPDF}=window.jspdf,doc=new jsPDF();doc.text("Relevé client — "+q,14,16);let body=[];rows.forEach(v=>v.articles.forEach(a=>body.push([v.date.slice(0,10),a.nom,a.quantite,fmt(a.prix*a.quantite)])));doc.autoTable({startY:25,head:[["Date","Produit","Qté","Total"]],body});doc.save("releve_client_"+q.replace(/\s+/g,"_")+".pdf");fermer("m-client")}
-async function exportExcel(){if(!window.ExcelJS)return show("Excel indisponible");let wb=new ExcelJS.Workbook(),ws=wb.addWorksheet("Ventes");ws.addRow(["Date","Produit","Quantité","Prix vente","Prix achat","Total","Profit"]);ventes.forEach(v=>v.articles.forEach(a=>ws.addRow([v.date.slice(0,10),a.nom,a.quantite,a.prix,a.achat,a.prix*a.quantite,(a.prix-a.achat)*a.quantite])));let wp=wb.addWorksheet("Produits");wp.addRow(["Produit","Vente","Achat","Stock","Code-barres","Emoji","Photo"]);produits.forEach(p=>wp.addRow([p.nom,p.prix,p.achat,p.stock,p.codeBarre,p.emoji,p.photo||""]));let wd=wb.addWorksheet("Dettes");wd.addRow(["Fournisseur","Montant","Statut","Date"]);dettes.forEach(d=>{let f=fournisseurs.find(x=>x.id===d.fournisseurId);wd.addRow([f?.nom||"",d.montant,d.paye?"Payé":"Impayé",d.date])});let buf=await wb.xlsx.writeBuffer(),a=document.createElement("a");a.href=URL.createObjectURL(new Blob([buf]));a.download="boutik_safe_export_"+today()+".xlsx";a.click()}
-function exportPDF(){let {jsPDF}=window.jspdf;if(!jsPDF)return;let doc=new jsPDF(),c=calculJour();doc.text("Rapport complet — "+config.nom,14,15);doc.autoTable({startY:22,head:[["Indicateur","Valeur"]],body:[["CA du jour",fmt(c.ca)],["Bénéfice du jour",fmt(c.benef)],["Résultat net",fmt(resultatNet())],["Dettes fournisseurs",fmt(totalDettes())],["Dépenses",fmt(totalDepenses())],["Nombre de ventes",String(c.vs.length)]]});let y=doc.lastAutoTable.finalY+8;doc.autoTable({startY:y,head:[["Produit","Stock","Prix vente","Prix achat"]],body:produits.map(p=>[p.nom,p.stock,fmt(p.prix),fmt(p.achat)])});doc.save("rapport_complet_"+today()+".pdf")}
+function ajusterColonnes(ws){ws.columns.forEach(col=>{let max=10;col.eachCell({includeEmpty:true},c=>{let l=(c.value==null?"":String(c.value)).length;if(l>max)max=l});col.width=Math.min(max+2,45)});ws.getRow(1).font={bold:true};ws.getRow(1).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF2563EB"}};ws.getRow(1).eachCell(c=>c.font={bold:true,color:{argb:"FFFFFFFF"}});ws.views=[{state:"frozen",ySplit:1}]}
+function arrayBufferVersBase64(buf){let bytes=new Uint8Array(buf),bin="";for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);return btoa(bin)}
+async function exporterFichier(nomFichier,buf,mime){
+  const estNatif=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform();
+  if(estNatif&&window.Capacitor.Plugins&&Capacitor.Plugins.Filesystem&&Capacitor.Plugins.Share){
+    try{
+      const{Filesystem,Share}=Capacitor.Plugins;
+      const base64=arrayBufferVersBase64(buf);
+      await Filesystem.writeFile({path:nomFichier,data:base64,directory:"CACHE"});
+      const{uri}=await Filesystem.getUri({path:nomFichier,directory:"CACHE"});
+      await Share.share({title:nomFichier,url:uri,dialogTitle:"Enregistrer "+nomFichier});
+      show("✅ Choisissez où enregistrer : Téléchargements, Drive, WhatsApp…");
+      return;
+    }catch(e){show("❌ Export impossible : "+e.message);return}
+  }
+  let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([buf],{type:mime}));a.download=nomFichier;document.body.appendChild(a);a.click();document.body.removeChild(a);
+  show("✅ Téléchargé dans le dossier Téléchargements du navigateur");
+}
+async function exportExcel(){if(!window.ExcelJS)return show("Excel indisponible");let wb=new ExcelJS.Workbook(),ws=wb.addWorksheet("Ventes");ws.addRow(["Date","Produit","Quantité","Prix vente","Prix achat","Total","Profit"]);ventes.forEach(v=>v.articles.forEach(a=>ws.addRow([v.date.slice(0,10),a.nom,a.quantite,a.prix,a.achat,a.prix*a.quantite,(a.prix-a.achat)*a.quantite])));ajusterColonnes(ws);let wp=wb.addWorksheet("Produits");wp.addRow(["Produit","Vente","Achat","Stock","Code-barres","Emoji","Photo"]);produits.forEach(p=>wp.addRow([p.nom,p.prix,p.achat,p.stock,p.codeBarre,p.emoji,p.photo||""]));ajusterColonnes(wp);let wd=wb.addWorksheet("Dettes");wd.addRow(["Fournisseur","Montant","Statut","Date"]);dettes.forEach(d=>{let f=fournisseurs.find(x=>x.id===d.fournisseurId);wd.addRow([f?.nom||"",d.montant,d.paye?"Payé":"Impayé",d.date])});ajusterColonnes(wd);let buf=await wb.xlsx.writeBuffer();await exporterFichier((config.nom||"boutik_safe").replace(/[^a-z0-9]+/gi,"_")+"_export_"+today()+".xlsx",buf,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+function exportPDF(){let {jsPDF}=window.jspdf;if(!jsPDF)return;let doc=new jsPDF(),c=calculJour();doc.text("Rapport complet — "+config.nom,14,15);doc.autoTable({startY:22,head:[["Indicateur","Valeur"]],body:[["CA du jour",fmt(c.ca)],["Bénéfice du jour",fmt(c.benef)],["Résultat net",fmt(resultatNet())],["Dettes fournisseurs",fmt(totalDettes())],["Dépenses",fmt(totalDepenses())],["Nombre de ventes",String(c.vs.length)]]});let y=doc.lastAutoTable.finalY+8;doc.autoTable({startY:y,head:[["Produit","Stock","Prix vente","Prix achat"]],body:produits.map(p=>[p.nom,p.stock,fmt(p.prix),fmt(p.achat)])});let buf=doc.output("arraybuffer");exporterFichier("rapport_complet_"+today()+".pdf",buf,"application/pdf")}
+async function exportHistorique(){if(!window.ExcelJS)return show("Excel indisponible");if(!ventes.length)return show("Aucune vente enregistrée pour le moment");let wb=new ExcelJS.Workbook();
+ let ws=wb.addWorksheet("Historique des ventes");ws.addRow(["Date","Heure","Produit","Quantité","Prix unitaire","Total ligne"]);
+ [...ventes].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(v=>v.articles.forEach(a=>ws.addRow([v.date.slice(0,10),v.date.slice(11,16),a.nom,a.quantite,a.prix,a.prix*a.quantite])));
+ ajusterColonnes(ws);
+ let parJour={};ventes.forEach(v=>{let j=v.date.slice(0,10);let c=v.articles.reduce((s,a)=>s+a.prix*a.quantite,0);parJour[j]=(parJour[j]||0)+c});
+ let wr=wb.addWorksheet("Résumé par jour");wr.addRow(["Date","Chiffre d'affaires","Nombre de ventes"]);
+ Object.keys(parJour).sort().forEach(j=>wr.addRow([j,parJour[j],ventes.filter(v=>v.date.slice(0,10)===j).length]));
+ ajusterColonnes(wr);
+ let archives=get("rapportsArchives",[]);
+ if(archives.length){let wa=wb.addWorksheet("Rapports journaliers clôturés");wa.addRow(["Date","CA","Bénéfice","Ventes","Meilleur article","Synthèse"]);
+  [...archives].sort((a,b)=>a.date.localeCompare(b.date)).forEach(r=>wa.addRow([r.date,r.ca,r.benef,r.nbVentes,r.meilleurArticle,r.texte]));
+  ajusterColonnes(wa);}
+ let buf=await wb.xlsx.writeBuffer();await exporterFichier((config.nom||"boutik_safe").replace(/[^a-z0-9]+/gi,"_")+"_historique_"+today()+".xlsx",buf,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
 function rendreParametres(){nomEntreprise.value=config.nom;seuilStock.value=config.seuil}
 function sauverParametres(){config.nom=nomEntreprise.value.trim()||"Boutik Safe";config.seuil=Number(seuilStock.value)||0;set("configBoutik",config);document.getElementById("titreApp").textContent="🏪 "+config.nom;rafraichir();show("✅ Paramètres enregistrés")}
+function validerBienvenue(){let n=document.getElementById("beNomEntreprise").value.trim();if(!n)return show("Merci d'indiquer le nom de votre entreprise");config.nom=n;set("configBoutik",config);set("entrepriseConfiguree",true);document.getElementById("titreApp").textContent="🏪 "+config.nom;fermer("m-bienvenue");rafraichir()}
+function verifierPremierLancement(){if(!get("entrepriseConfiguree",false)){modal("m-bienvenue",true)}}
 function basculerTheme(){config.theme=config.theme==="sombre"?"clair":"sombre";set("configBoutik",config);appliquerTheme()}
 function appliquerTheme(){document.body.classList.toggle("dark",config.theme==="sombre")}
 function rafraichir(){document.getElementById("titreApp").textContent="🏪 "+config.nom;let n=produits.filter(p=>p.stock<=Number(config.seuil)).length;badgeAlerte.style.display=n?"block":"none";badgeAlerte.textContent="⚠️ "+n;badgePremium.style.display=calculPremium().actif?"none":"block"}
@@ -517,7 +600,7 @@ function envoyerRecup(){window.open("https://wa.me/"+SUPPORT+"?text="+encodeURIC
 function validerMaitre(){let attendu=checksum(device+SECRET_SUPPORT+"PIN");if(masterCode.value.trim()!==attendu)return show("❌ Code incorrect");let np=prompt("Nouveau PIN à 4 chiffres :");if(!/^\d{4}$/.test(np))return show("❌ PIN invalide");pin=np;set("pinBoutique",pin);pinScreen.classList.remove("on");show("✅ PIN réinitialisé")}
 function testerNotification(){if(!("Notification"in window))return show("Notifications non supportées");Notification.requestPermission().then(p=>{if(p==="granted")new Notification(config.nom,{body:"Test de notification Boutik Safe"});else show("Permission refusée")})}
 function notifierStock(){if("Notification"in window&&Notification.permission==="granted"){let ps=produits.filter(p=>p.stock<=Number(config.seuil));if(ps.length)new Notification(config.nom,{body:"Stock faible : "+ps.map(p=>p.nom).join(", ")})}}
-appliquerTheme();rendreVente();rafraichir();setTimeout(notifierStock,1200);
+appliquerTheme();verifierClotureJournaliere();rendreVente();rafraichir();setTimeout(notifierStock,1200);setTimeout(verifierPremierLancement,300);
 </script>
 
 <script>

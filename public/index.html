@@ -7,14 +7,37 @@
   }
 </script>
 <meta charset="utf-8">
-...
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Boutik Safe — Gestion polyvalente d'activités</title>
+<meta name="description" content="Boutik Safe est une application de gestion complète pensée pour les commerçants et professionnels africains : suivez vos produits, votre stock, vos ventes, votre caisse et vos fournisseurs, même hors connexion, sur Android comme sur ordinateur.">
+<meta name="author" content="Etienne Gnanhoui">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Boutik Safe — Gestion polyvalente d'activités">
+<meta property="og:description" content="Application de gestion de boutique et d'activité, conçue et développée par Etienne Gnanhoui. Fonctionne hors ligne, sur Android et sur ordinateur.">
+<meta property="og:image" content="icon-512.png">
+<meta name="twitter:card" content="summary">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-512.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2563eb">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Boutik Safe",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Android, Web",
+  "description": "Application de gestion polyvalente (produits, stock, ventes, caisse, fournisseurs) fonctionnant hors ligne.",
+  "author": {
+    "@type": "Person",
+    "name": "Etienne Gnanhoui"
+  },
+  "creator": {
+    "@type": "Person",
+    "name": "Etienne Gnanhoui"
+  }
+}
+</script>
 <style>
 :root {
   --blue:#2563eb; --indigo:#4f46e5; --cyan:#0891b2; --violet:#7c3aed;
@@ -84,6 +107,7 @@ h2{font-size:30px;margin:0 0 12px;color:#1e3a8a} .intro{color:var(--muted);line-
 <section class="hero">
   <div class="brand"><img src="icon-512.png" alt="Boutik Safe"><div><h1>Boutik Safe</h1><div class="tag">Une solution polyvalente pour gérer et organiser votre activité</div></div></div>
   <p class="lead">Boutik Safe est une application conçue pour aider les professionnels à organiser leurs produits, leurs articles et leurs activités. Elle permet d'adapter la gestion à différents types de commerce et de secteur, sur Android comme sur ordinateur.</p>
+  <p style="position:relative;z-index:1;margin:22px 0 0;font-size:13.5px;font-weight:700;color:#dbe3ff">Conçu et développé par <span style="color:var(--amber)">Etienne Gnanhoui</span></p>
 </section>
 
 <section class="section">
@@ -152,14 +176,19 @@ h2{font-size:30px;margin:0 0 12px;color:#1e3a8a} .intro{color:var(--muted);line-
 
 </div>
 <p class="foot-note">La première ouverture nécessite une connexion ; l'application reste ensuite disponible hors ligne.</p>
-<div class="credit">Développé par <span>GNANHOUI Etienne</span></div>
+<div class="credit">Développé par <span>Etienne Gnanhoui</span></div>
 </section>
+
+<footer style="max-width:1160px;margin:36px auto 0;padding:0 18px;text-align:center;color:#94a3b8;font-size:13px">
+  <p style="margin:0">© <span id="anneeFooter"></span> Boutik Safe — Conçu et développé par <strong style="color:#3730a3">Etienne Gnanhoui</strong></p>
+</footer>
 </main>
 <script>
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js'));
 let deferredPrompt;const b=document.getElementById('installBtn');
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;b.style.display='block';});
 b.addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;b.style.display='none';});
+document.getElementById('anneeFooter').textContent=new Date().getFullYear();
 </script>
 </body>
 </html>
