@@ -8,6 +8,7 @@
 <script src="vendor/chart.umd.min.js"></script>
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="vendor/jspdf.plugin.autotable.min.js"></script>
+<script src="vendor/jsbarcode.min.js"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#17202a}
 body.dark{background:#111827;color:#f3f4f6}header{background:#16a34a;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:30;box-shadow:0 2px 8px #0002}header h1{font-size:21px;margin:0;font-weight:900}
@@ -21,6 +22,15 @@ nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:3px solid 
 .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.stat{background:#f3f4f6;padding:14px;border-radius:15px}.stat.big{grid-column:1/3;background:#16a34a;color:#fff}.stat small{display:block;opacity:.75}.stat strong{font-size:21px}
 label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}input,select,textarea{width:100%;padding:11px;border:2px solid #e5e7eb;border-radius:11px;font-size:15px;margin-top:4px;background:#fff;color:#111827}textarea{min-height:80px}
 .modal{display:none;position:fixed;inset:0;background:#0008;z-index:60;align-items:flex-end}.modal.on{display:flex}.box{background:#fff;color:#111;width:100%;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:16px;max-width:520px;margin:auto}.dark .box{background:#1f2937;color:#fff}.close{float:right;border:0;background:none;font-size:23px}
+#zoneImpression{display:none}
+@media print{
+  body>*:not(#zoneImpression){display:none!important}
+  #zoneImpression{display:block!important;font-family:Arial,sans-serif;color:#000;padding:20px}
+  #zoneImpression table{width:100%;border-collapse:collapse;margin-top:14px}
+  #zoneImpression th,#zoneImpression td{border:1px solid #999;padding:6px 8px;text-align:left;font-size:13px}
+  #zoneImpression th{background:#eee}
+  #zoneImpression .total{font-size:17px;font-weight:900;text-align:right;margin-top:10px}
+}
 .flash{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:100;background:#15803d;color:#fff;padding:10px 18px;border-radius:12px;font-weight:800}
 .barre{position:fixed;bottom:63px;left:0;right:0;background:#fff;border-top:3px solid #16a34a;padding:10px;z-index:20;box-shadow:0 -5px 18px #0002}.barre .resume{display:flex;justify-content:space-between;font-weight:900;font-size:18px}
 .pin{position:fixed;inset:0;background:#15803d;color:#fff;z-index:90;display:none;align-items:center;justify-content:center;padding:20px}.pin.on{display:flex}.pinbox{width:330px;text-align:center}.dots{display:flex;justify-content:center;gap:12px;margin:20px}.dot{width:15px;height:15px;border:2px solid #fff;border-radius:50%}.dot.on{background:#fff}.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.keys button{height:58px;border:0;border-radius:50%;background:#ffffff22;color:#fff;font-size:19px;font-weight:900}.link{border:0;background:none;color:#fef08a;text-decoration:underline;margin:15px;cursor:pointer}
@@ -62,13 +72,13 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 
 <section id="e-stock" class="ecran">
 <div id="alertes"></div><button class="btn vert" onclick="ouvrirProduit()">➕ Ajouter produit</button>
-<div class="row"><button class="btn outline" onclick="ouvrirInventaire()">📋 Inventaire partiel</button><button class="btn outline" onclick="ouvrirImport()">📥 Import Excel/CSV</button></div>
+<div class="row"><button class="btn outline" onclick="ouvrirInventaire()">📋 Inventaire partiel</button><button class="btn outline" onclick="ouvrirImport()">📥 Import Excel/CSV</button><button class="btn outline" onclick="ouvrirEtiquettes()">🏷️ Étiquettes prix</button></div>
 <div id="listeStock"></div>
 </section>
 
 <section id="e-rapport" class="ecran">
 <div class="statgrid"><div class="stat big"><small>CA aujourd'hui</small><div class="kpi" id="caJour">0 F</div></div><div class="stat"><small>Ventes</small><strong id="nbJour">0</strong></div><div class="stat"><small>Bénéfice estimé</small><strong id="benefJour">0 F</strong></div></div>
-<div class="carte"><b>📝 Synthèse du jour</b><p id="paragrapheRapport" style="margin:8px 0 0;line-height:1.5"></p></div>
+<div class="carte"><b>📝 Synthèse du jour</b><p id="paragrapheRapport" style="margin:8px 0 10px;line-height:1.5"></p><button class="btn outline" onclick="ecouterRapport()">🔊 Écouter le résumé</button></div>
 <div class="carte"><b>📊 Ventes des 7 derniers jours</b><canvas id="graph7" height="180"></canvas></div>
 <button class="btn vert" onclick="exportExcel()">📊 Export Excel complet</button><button class="btn rouge" onclick="exportPDF()">📄 Export PDF complet</button>
 <div id="zoneWhatsApp"></div>
@@ -80,6 +90,7 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <div id="bandeauEssai" class="carte" style="display:none"></div>
 <div class="menu-grid">
   <div class="menu-tile" onclick="go('credit')"><span class="ico">💳</span><span class="lbl">Crédit</span><span class="badge" id="badgeCredit" style="display:none"></span></div>
+  <div class="menu-tile" onclick="go('factures')"><span class="ico">🧾</span><span class="lbl">Factures</span></div>
   <div class="menu-tile" onclick="go('dashboard')"><span class="ico">📊</span><span class="lbl">Dashboard</span><span class="badge" id="lockDashboard" style="display:none;left:10px;right:auto;background:#1f2937">🔒</span></div>
   <div class="menu-tile" onclick="go('caisse')"><span class="ico">💰</span><span class="lbl">Caisse</span></div>
   <div class="menu-tile" onclick="go('fournisseurs')"><span class="ico">🚚</span><span class="lbl">Fournisseurs</span><span class="badge" id="badgeFournisseurs" style="display:none"></span><span class="badge" id="lockFournisseurs" style="display:none;left:10px;right:auto;background:#1f2937">🔒</span></div>
@@ -103,6 +114,12 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 
 <section id="e-fournisseurs" class="ecran">
 <h2>🚚 Fournisseurs</h2><button class="btn vert" onclick="ouvrirFournisseur()">➕ Ajouter fournisseur</button><button class="btn outline" onclick="ouvrirDette()">💳 Enregistrer dette</button><div id="listeFournisseurs"></div>
+</section>
+
+<section id="e-factures" class="ecran">
+<h2>🧾 Factures récentes</h2>
+<p class="muted">Les 5 dernières factures générées. Tu peux les réimprimer ou les réexporter à tout moment.</p>
+<div id="listeFacturesRecentes"></div>
 </section>
 
 <section id="e-premium" class="ecran">
@@ -168,9 +185,19 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 
 <div id="m-bienvenue" class="modal"><div class="box"><h2>👋 Bienvenue sur Boutik Safe</h2><p class="muted">Pour personnaliser votre application et vos rapports, indiquez le nom de votre entreprise ou boutique.</p><label>Nom de l'entreprise</label><input id="beNomEntreprise" placeholder="Ex : Boutique Chez Rachel"><button class="btn vert" onclick="validerBienvenue()">✅ Commencer</button></div></div>
 
+<div id="m-monnaie" class="modal"><div class="box"><h2>💵 Monnaie à rendre</h2><p class="muted">Facultatif — indique le montant reçu du client pour calculer la monnaie.</p><label>Total à payer</label><div id="monnaieTotal" style="font-weight:900;font-size:20px;margin:2px 0 10px"></div><label>Montant reçu</label><input id="montantRecu" type="number" step="0.01" oninput="calculerMonnaie()"><div id="resultatMonnaie" class="carte" style="margin-top:10px;display:none"></div><button class="btn vert" onclick="fermer('m-monnaie');document.getElementById('actionFactureLbl').textContent=(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())?'📤 Exporter la facture':'🖨️ Imprimer la facture';modal('m-facture-choix',true)">Continuer</button></div></div>
+
+<div id="m-facture-choix" class="modal"><div class="box"><h2>🧾 Facture</h2><p class="muted">Voulez-vous générer la facture de cette vente ?</p><button class="btn vert" id="btnActionFacture" onclick="etapeNomClient()"><span id="actionFactureLbl">Imprimer la facture</span></button><button class="btn outline" onclick="fermer('m-facture-choix')">Annuler</button></div></div>
+
+<div id="m-facture-client" class="modal"><div class="box"><h2>🧾 Nom du client</h2><p class="muted">Facultatif — laissez vide si non renseigné.</p><label>Nom du client</label><input id="factureNomClient" placeholder="Ex : Moussa (facultatif)"><button class="btn vert" onclick="genererEtEnvoyerFacture()"><span id="actionFactureLbl2">Imprimer</span></button><button class="btn outline" onclick="fermer('m-facture-client')">Annuler</button></div></div>
+
 <div id="m-dette" class="modal"><div class="box"><button class="close" onclick="fermer('m-dette')">✕</button><h2>Dette fournisseur</h2><label>Fournisseur</label><select id="dFour"></select><label>Montant</label><input id="dMontant" type="number" step="0.01"><label>Motif</label><input id="dMotif"><button class="btn vert" onclick="sauverDette()">Enregistrer</button></div></div>
 
 <div id="m-inventaire" class="modal"><div class="box"><button class="close" onclick="fermer('m-inventaire')">✕</button><h2>📋 Inventaire partiel</h2><p class="muted">Sélectionne un rayon/produit et sa quantité réellement comptée.</p><div id="invListe"></div><button class="btn vert" onclick="sauverInventaire()">💾 Enregistrer le comptage</button></div></div>
+
+<div id="m-etiquettes" class="modal"><div class="box"><button class="close" onclick="fermer('m-etiquettes')">✕</button><h2>🏷️ Étiquettes prix</h2><p class="muted">Choisis les produits et le nombre d'exemplaires à imprimer.</p><div id="etiListe"></div><button class="btn vert" onclick="genererEtiquettes()">🖨️ Générer et imprimer</button></div></div>
+
+<div id="zoneImpression"></div>
 
 <div id="m-import" class="modal"><div class="box"><button class="close" onclick="fermer('m-import')">✕</button><h2>📥 Import Excel / CSV</h2><p class="muted">Colonnes recommandées : nom, prix_vente, prix_achat, stock, code_barre, emoji, photo, peremption.</p><input id="fichierImport" type="file" accept=".xlsx,.xls,.csv"><button class="btn vert" onclick="importerFichier()">Importer</button><div id="importMsg"></div></div></div>
 
@@ -190,15 +217,16 @@ let device=get("codeAppareil",null);if(!device){device=Math.random().toString(36
 let pin=get("pinBoutique",null), secret=get("motSecretPIN",null), premiumUntil=get("expirationPremium",null), essai=get("essaiDebut",null);if(!essai){essai=Date.now();set("essaiDebut",essai)}
 const fmt=n=>new Intl.NumberFormat("fr-FR").format(Number(n)||0)+" F", id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6), today=()=>new Date().toISOString().slice(0,10), show=t=>{let e=document.getElementById("flash");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2200)};
 const saveAll=()=>{set("produits",produits);set("ventes",ventes);set("credits",credits);set("mouvementsCaisse",mouvements);set("fournisseurs",fournisseurs);set("dettesFournisseurs",dettes);set("inventaires",inventaires);set("panierSauve",panier)};
-const ECRANS_SECONDAIRES=["credit","dashboard","caisse","fournisseurs","parametres","premium"];
+const ECRANS_SECONDAIRES=["credit","dashboard","caisse","fournisseurs","parametres","premium","factures"];
 const PREMIUM_LOCKED=["rapport","dashboard","fournisseurs"];
 function go(id){
  if((id==="stock"||id==="caisse"||id==="fournisseurs"||id==="parametres")&&!sessionStorage.getItem("bsUnlocked")){ouvrirPin();return}
  if(PREMIUM_LOCKED.includes(id)&&!calculPremium().actif){show("⭐ Fonction Premium — essai terminé");id="premium"}
  document.querySelectorAll(".ecran").forEach(x=>x.classList.remove("actif"));let e=document.getElementById("e-"+id);if(!e){id="menu";e=document.getElementById("e-menu")}e.classList.add("actif");
+ set("dernierEcran",id);
  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("actif",b.dataset.go===id||(b.dataset.go==="menu"&&ECRANS_SECONDAIRES.includes(id))));
  document.getElementById("btnRetour").style.display=ECRANS_SECONDAIRES.includes(id)?"inline-block":"none";
- ({vente:rendreVente,stock:rendreStock,credit:rendreCredit,rapport:rendreRapport,dashboard:rendreDashboard,caisse:rendreCaisse,fournisseurs:rendreFournisseurs,parametres:rendreParametres,premium:rendrePremium,menu:rendreMenu}[id]||(()=>{}))();
+ ({vente:rendreVente,stock:rendreStock,credit:rendreCredit,rapport:rendreRapport,dashboard:rendreDashboard,caisse:rendreCaisse,fournisseurs:rendreFournisseurs,parametres:rendreParametres,premium:rendrePremium,factures:rendreFacturesRecentes,menu:rendreMenu}[id]||(()=>{}))();
 }
 function rendreMenu(){
  let nbCredit=credits.filter(c=>!c.paye).length;badgeCredit.style.display=nbCredit?"block":"none";badgeCredit.textContent=nbCredit;
@@ -443,7 +471,114 @@ function validerVente(){
  let arr=Object.entries(panier).filter(([i,q])=>q>0);if(!arr.length)return;let articles=arr.map(([i,q])=>{let p=produits.find(x=>x.id===i);return{produitId:i,nom:p.nom,quantite:Number(q),prix:p.prix,achat:p.achat}}),total=articles.reduce((s,a)=>s+a.prix*a.quantite,0);
  produits=produits.map(p=>{let q=Number(panier[p.id]||0);return q?{...p,stock:p.stock-q}:p});
  ventes.push({id:id(),date:new Date().toISOString(),articles,total});panier={};saveAll();show("✅ Vente enregistrée");rendreVente();
+ venteEnAttenteFacture={articles,total,date:new Date().toISOString()};
+ document.getElementById("monnaieTotal").textContent=fmt(total);document.getElementById("montantRecu").value="";document.getElementById("resultatMonnaie").style.display="none";
+ modal("m-monnaie",true);
 }
+function calculerMonnaie(){let recu=Number(document.getElementById("montantRecu").value)||0,total=venteEnAttenteFacture.total,d=document.getElementById("resultatMonnaie");
+ if(!recu){d.style.display="none";return}
+ d.style.display="block";
+ if(recu<total){d.innerHTML=`<span class="danger" style="font-weight:900">Manque encore : ${fmt(total-recu)}</span>`}
+ else{d.innerHTML=`<span class="success" style="font-weight:900">Monnaie à rendre : ${fmt(recu-total)}</span>`}
+}
+function etapeNomClient(){modal("m-facture-choix",false);document.getElementById("factureNomClient").value="";document.getElementById("actionFactureLbl2").textContent=(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())?"Exporter":"Imprimer";modal("m-facture-client",true)}
+function prochainNumeroFacture(){let n=get("compteurFactures",0)+1;set("compteurFactures",n);return"FAC-"+today().slice(0,4)+"-"+String(n).padStart(4,"0")}
+async function genererEtEnvoyerFacture(){
+ let client=document.getElementById("factureNomClient").value.trim()||"X";
+ let v=venteEnAttenteFacture;if(!v)return;
+ let numero=prochainNumeroFacture();
+ let recu=Number(document.getElementById("montantRecu")?.value)||0;
+ let facture={numero,date:v.date,client,articles:v.articles,total:v.total,recu:recu>=v.total?recu:null,monnaie:recu>=v.total?recu-v.total:null};
+ let archives=get("facturesRecentes",[]);archives.unshift(facture);archives=archives.slice(0,5);set("facturesRecentes",archives);
+ fermer("m-facture-client");
+ const estNatif=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform();
+ if(estNatif){await exporterFacturePDF(facture)}else{imprimerFacture(facture)}
+}
+function contenuHtmlFacture(f){
+ let lignes=f.articles.map(a=>`<tr><td>${a.nom}</td><td style="text-align:center">${a.quantite}</td><td style="text-align:right">${fmt(a.prix)}</td><td style="text-align:right">${fmt(a.prix*a.quantite)}</td></tr>`).join("");
+ return `<div style="max-width:480px;margin:auto">
+  <h2 style="margin:0 0 2px">${config.nom||"Boutik Safe"}</h2>
+  <div style="color:#555;font-size:13px">Facture n° ${f.numero}</div>
+  <div style="color:#555;font-size:13px;margin-bottom:10px">${new Date(f.date).toLocaleString("fr-FR")}</div>
+  <div style="margin-bottom:8px"><b>Client :</b> ${f.client}</div>
+  <table><thead><tr><th>Article</th><th>Qté</th><th>P.U.</th><th>Total</th></tr></thead><tbody>${lignes}</tbody></table>
+  <div class="total">Total : ${fmt(f.total)}</div>
+  ${f.monnaie!=null?`<div style="text-align:right;color:#555;font-size:13px">Reçu : ${fmt(f.recu)} — Monnaie rendue : ${fmt(f.monnaie)}</div>`:""}
+  <p style="text-align:center;color:#777;font-size:12px;margin-top:24px">Merci de votre confiance — ${config.nom||"Boutik Safe"}</p>
+ </div>`;
+}
+function imprimerFacture(f){document.getElementById("zoneImpression").innerHTML=contenuHtmlFacture(f);setTimeout(()=>window.print(),150)}
+function ouvrirEtiquettes(){
+ document.getElementById("etiListe").innerHTML=produits.map(p=>`<div class="carte" style="display:flex;align-items:center;gap:10px"><div style="flex:1"><b>${p.nom}</b><div class="muted">${fmt(p.prix)}${p.codeBarre?" · "+p.codeBarre:""}</div></div><input type="number" min="0" value="0" style="width:70px" id="etiQte_${p.id}"></div>`).join("")||"<p class='muted'>Aucun produit.</p>";
+ modal("m-etiquettes",true);
+}
+function contenuHtmlEtiquettes(liste){
+ let boxes=[];
+ liste.forEach(({p,qte})=>{for(let i=0;i<qte;i++)boxes.push(p)});
+ let html=`<div style="display:flex;flex-wrap:wrap;gap:8px">`+boxes.map((p,i)=>`
+  <div style="width:180px;border:1px dashed #999;border-radius:6px;padding:8px;text-align:center;page-break-inside:avoid">
+   <div style="font-weight:900;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nom}</div>
+   <div style="font-size:15px;font-weight:900;margin:2px 0">${fmt(p.prix)}</div>
+   ${p.codeBarre?`<svg class="svgBarcode" data-code="${p.codeBarre}" style="width:100%;height:40px"></svg>`:""}
+  </div>`).join("")+`</div>`;
+ return html;
+}
+function genererEtiquettes(){
+ let liste=produits.map(p=>({p,qte:Number(document.getElementById("etiQte_"+p.id)?.value)||0})).filter(x=>x.qte>0);
+ if(!liste.length)return show("Indique au moins une quantité");
+ fermer("m-etiquettes");
+ const estNatif=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform();
+ if(estNatif){exporterEtiquettesPDF(liste)}else{imprimerEtiquettes(liste)}
+}
+function imprimerEtiquettes(liste){
+ document.getElementById("zoneImpression").innerHTML=contenuHtmlEtiquettes(liste);
+ if(window.JsBarcode){document.querySelectorAll("#zoneImpression .svgBarcode").forEach(svg=>{try{JsBarcode(svg,svg.dataset.code,{format:"CODE128",displayValue:true,fontSize:11,height:32,margin:0})}catch(e){}})}
+ setTimeout(()=>window.print(),200);
+}
+async function exporterEtiquettesPDF(liste){
+ let {jsPDF}=window.jspdf;if(!jsPDF)return show("PDF indisponible");
+ let boxes=[];liste.forEach(({p,qte})=>{for(let i=0;i<qte;i++)boxes.push(p)});
+ let doc=new jsPDF();
+ let cols=3,w=60,h=32,mx=10,my=12,gx=5,gy=5,i=0;
+ for(let b=0;b<boxes.length;b++){
+  let p=boxes[b];
+  let col=i%cols,row=Math.floor(i/cols)%6;
+  if(i>0&&i%(cols*6)===0)doc.addPage();
+  let x=mx+col*(w+gx),y=my+row*(h+gy);
+  doc.setDrawColor(180);doc.rect(x,y,w,h);
+  doc.setFontSize(9);doc.text(String(p.nom).slice(0,26),x+3,y+7);
+  doc.setFontSize(11);doc.text(fmt(p.prix).replace(/\u202f|\u00a0/g," "),x+3,y+14);
+  if(p.codeBarre){
+   try{
+    let cv=document.createElement("canvas");
+    JsBarcode(cv,p.codeBarre,{format:"CODE128",displayValue:true,fontSize:10,height:22,margin:0});
+    doc.addImage(cv.toDataURL("image/png"),"PNG",x+3,y+17,w-6,12);
+   }catch(e){}
+  }
+  i++;
+ }
+ let buf=doc.output("arraybuffer");
+ await exporterFichier("etiquettes_"+today()+".pdf",buf,"application/pdf");
+}
+async function exporterFacturePDF(f){
+ let {jsPDF}=window.jspdf;if(!jsPDF)return show("PDF indisponible");
+ let doc=new jsPDF();
+ doc.setFontSize(15);doc.text(config.nom||"Boutik Safe",14,16);
+ doc.setFontSize(10);doc.text("Facture n° "+f.numero,14,23);doc.text(new Date(f.date).toLocaleString("fr-FR"),14,28);
+ doc.text("Client : "+f.client,14,35);
+ doc.autoTable({startY:42,head:[["Article","Qté","P.U.","Total"]],body:f.articles.map(a=>[a.nom,String(a.quantite),fmt(a.prix).replace(/\u202f|\u00a0/g," "),fmt(a.prix*a.quantite).replace(/\u202f|\u00a0/g," ")])});
+ let y=doc.lastAutoTable.finalY+10;
+ doc.setFontSize(13);doc.text("Total : "+fmt(f.total).replace(/\u202f|\u00a0/g," "),14,y);
+ if(f.monnaie!=null){doc.setFontSize(10);doc.text("Reçu : "+fmt(f.recu).replace(/\u202f|\u00a0/g," ")+" — Monnaie rendue : "+fmt(f.monnaie).replace(/\u202f|\u00a0/g," "),14,y+8)}
+ let buf=doc.output("arraybuffer");
+ await exporterFichier("facture_"+f.numero+".pdf",buf,"application/pdf");
+}
+function rendreFacturesRecentes(){
+ let archives=get("facturesRecentes",[]);
+ let c=document.getElementById("listeFacturesRecentes");if(!c)return;
+ c.innerHTML=archives.length?archives.map(f=>`<div class="carte"><b>${f.numero}</b> — ${f.client}<div class="muted">${new Date(f.date).toLocaleString("fr-FR")} · ${fmt(f.total)}</div><button class="btn outline" onclick='rejouerFacture(${JSON.stringify(f).replace(/'/g,"&#39;")})'>${(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())?"📤 Réexporter":"🖨️ Réimprimer"}</button></div>`).join(""):"<p class='muted'>Aucune facture récente.</p>";
+}
+function rejouerFacture(f){if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())exporterFacturePDF(f);else imprimerFacture(f)}
 function chercherCode(){let c=codeVente.value.trim(),p=produits.find(x=>x.codeBarre===c);codeVente.value="";if(p){panier[p.id]=Number(panier[p.id]||0)+1;set("panierSauve",panier);rendreVente()}else if(c){ouvrirProduit();pCode.value=c;show("🆕 Nouveau produit")}}
 let scanCb=null,stream=null;
 async function scanCode(dest){scanCb=dest;if(!navigator.mediaDevices?.getUserMedia)return show("Caméra indisponible : utilise le code manuel");
@@ -495,6 +630,13 @@ function genererParagraphePourDate(d){let c=calculPourDate(d);let nomE=config.no
  return{texte:phrase1+phraseDetail+phraseTop+phrasePerimes+phraseDettes,ca:c.ca,benef:c.benef,nbVentes:c.vs.length,meilleurArticle:art[0]?art[0][0]:""};
 }
 function genererParagrapheRapport(){document.getElementById("paragrapheRapport").textContent=genererParagraphePourDate(today()).texte}
+function ecouterRapport(){
+ if(!("speechSynthesis" in window))return show("Lecture vocale non disponible sur cet appareil");
+ let texte=document.getElementById("paragrapheRapport").textContent;if(!texte)return;
+ window.speechSynthesis.cancel();
+ let u=new SpeechSynthesisUtterance(texte);u.lang="fr-FR";u.rate=0.98;
+ window.speechSynthesis.speak(u);
+}
 function rendreRapport(){let c=calculJour();caJour.textContent=fmt(c.ca);nbJour.textContent=c.vs.length;benefJour.textContent=fmt(c.benef);genererParagrapheRapport();zoneWhatsApp.innerHTML=`<button class="btn vert" onclick="envoyerRapport()">💬 Envoyer le rapport au patron</button>`;if(graph)graph.destroy();graph=new Chart(document.getElementById("graph7"),{type:"line",data:{labels:jours7().map(x=>x.date.slice(5)),datasets:[{label:"CA",data:jours7().map(x=>x.ca),tension:.3}]},options:{responsive:true,plugins:{legend:{display:false}}}})}
 // Clôture automatique des rapports : comme l'application n'a pas de service en arrière-plan,
 // elle ne peut pas s'exécuter seule à 23h59. Dès la réouverture après minuit, elle détecte
@@ -601,6 +743,8 @@ function validerMaitre(){let attendu=checksum(device+SECRET_SUPPORT+"PIN");if(ma
 function testerNotification(){if(!("Notification"in window))return show("Notifications non supportées");Notification.requestPermission().then(p=>{if(p==="granted")new Notification(config.nom,{body:"Test de notification Boutik Safe"});else show("Permission refusée")})}
 function notifierStock(){if("Notification"in window&&Notification.permission==="granted"){let ps=produits.filter(p=>p.stock<=Number(config.seuil));if(ps.length)new Notification(config.nom,{body:"Stock faible : "+ps.map(p=>p.nom).join(", ")})}}
 appliquerTheme();verifierClotureJournaliere();rendreVente();rafraichir();setTimeout(notifierStock,1200);setTimeout(verifierPremierLancement,300);
+// Restaure l'écran où l'utilisateur se trouvait avant que le téléphone n'ait libéré la mémoire de l'app
+{let dernier=get("dernierEcran","vente");if(dernier&&dernier!=="vente")go(dernier)}
 </script>
 
 <script>

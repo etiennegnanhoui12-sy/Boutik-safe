@@ -1,4 +1,4 @@
-const CACHE_NAME = 'boutik-safe-v6';
+const CACHE_NAME = 'boutik-safe-v7';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -21,7 +21,8 @@ const CORE_ASSETS = [
   './vendor/exceljs.min.js',
   './vendor/chart.umd.min.js',
   './vendor/jspdf.umd.min.js',
-  './vendor/jspdf.plugin.autotable.min.js'
+  './vendor/jspdf.plugin.autotable.min.js',
+  './vendor/jsbarcode.min.js'
 ];
 // Toutes les bibliothèques sont désormais servies localement (dossier vendor/,
 // inclus dans l'APK et mis en cache comme n'importe quel autre fichier du site).
