@@ -9,6 +9,7 @@
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="vendor/jspdf.plugin.autotable.min.js"></script>
 <script src="vendor/jsbarcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#17202a}
 body.dark{background:#111827;color:#f3f4f6}header{background:#16a34a;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:30;box-shadow:0 2px 8px #0002}header h1{font-size:21px;margin:0;font-weight:900}
@@ -44,17 +45,51 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 .menu-tile .badge{position:absolute;top:10px;right:10px;background:#dc2626;color:#fff;font-size:11px;font-weight:900;padding:2px 8px;border-radius:999px}
 @media(min-width:700px){.ecran{max-width:850px;margin:auto}.grille{grid-template-columns:repeat(3,1fr)}.menu-grid{grid-template-columns:repeat(3,1fr)}nav{max-width:850px;left:50%;transform:translateX(-50%);border-radius:15px 15px 0 0}}
 
-.premium-hero{background:linear-gradient(135deg,#0f172a,#14532d);color:#fff;border-radius:22px;padding:22px;margin-bottom:14px;box-shadow:0 10px 30px rgba(15,23,42,.14)}
+.historique-tools{display:grid;gap:8px}.historique-resultats{margin-top:10px}.historique-empty{padding:18px;text-align:center}.historique-meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:#6b7280}.historique-total{font-weight:900;color:#15803d}.premium-hero{background:linear-gradient(135deg,#0f172a,#14532d);color:#fff;border-radius:22px;padding:22px;margin-bottom:14px;box-shadow:0 10px 30px rgba(15,23,42,.14)}
 .premium-hero h2{margin:0 0 6px;font-size:22px}.premium-hero p{margin:0;color:#dbeafe;font-size:13px;line-height:1.5}
 .paiement-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}.paiement-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:15px;box-shadow:0 4px 14px rgba(15,23,42,.05)}
 .paiement-card .reseau{font-weight:900;font-size:15px}.paiement-card .numero{font-size:21px;font-weight:900;letter-spacing:.5px;margin:6px 0 10px}.paiement-card .mini{font-size:12px;color:#64748b}
 .premium-step{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #eef2f7}.premium-step:last-child{border-bottom:0}.premium-step .num{width:28px;height:28px;border-radius:50%;background:#16a34a;color:#fff;display:grid;place-items:center;font-weight:900;flex:none}
 @media(min-width:650px){.paiement-grid{grid-template-columns:repeat(3,1fr)}}
+
+.bs-auth-gate{position:fixed;inset:0;background:linear-gradient(135deg,#0f766e,#2563eb,#4f46e5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px}.bs-auth-box{width:min(460px,100%);background:#fff;border-radius:24px;padding:22px;box-shadow:0 25px 80px #0006;color:#111827}.bs-brand{font-size:24px;font-weight:950;color:#15803d;margin-bottom:10px}.bs-auth-box h2{margin:5px 0}.bs-auth-box input{margin-bottom:4px}.bs-auth-box .link{color:#2563eb}.bs-legal-mini{font-size:11px;color:#64748b;margin-top:12px;line-height:1.45}.bs-auth-gate.offline .bs-auth-box{border:3px solid #eab308}.bs-account-badge{display:inline-block;padding:4px 8px;border-radius:8px;background:#dcfce7;color:#15803d;font-weight:900;font-size:12px}
+
+.auth-screen{position:fixed;inset:0;background:linear-gradient(145deg,#052e16,#16a34a);z-index:200;display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto}.auth-card{width:min(440px,100%);background:#fff;border-radius:28px;padding:24px;box-shadow:0 20px 60px #0004;color:#17202a}.auth-logo{font-size:44px;text-align:center}.auth-card h2{text-align:center;margin:6px 0}.auth-sub{text-align:center;color:#64748b;font-size:13px;line-height:1.5}.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f1f5f9;padding:5px;border-radius:13px;margin:18px 0}.auth-tabs button{border:0;padding:10px;border-radius:9px;font-weight:800;background:transparent}.auth-tabs button.on{background:#16a34a;color:#fff}.auth-msg{padding:10px;border-radius:10px;background:#f0fdf4;color:#166534;font-size:13px;margin:10px 0;display:none}.auth-error{padding:10px;border-radius:10px;background:#fef2f2;color:#991b1b;font-size:13px;margin:10px 0;display:none}.auth-small{font-size:12px;color:#64748b;text-align:center;margin-top:10px}.auth-link{border:0;background:none;color:#15803d;font-weight:800;text-decoration:underline;cursor:pointer}.auth-device{font-size:12px;background:#f8fafc;padding:10px;border-radius:10px;margin-top:12px;text-align:center;color:#475569}.auth-screen.hidden{display:none}
 </style>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1f2937">
 </head>
 <body>
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">🏪</div><h2>Bienvenue dans Boutik Safe</h2>
+    <p class="auth-sub">Connectez-vous à votre compte pour retrouver vos données, votre historique et votre abonnement Premium sur n’importe quel appareil.</p>
+    <div class="auth-tabs"><button id="tabLogin" class="on" onclick="authMode('login')">Se connecter</button><button id="tabSignup" onclick="authMode('signup')">Créer un compte</button></div>
+    <div id="authError" class="auth-error"></div><div id="authMsg" class="auth-msg"></div>
+    <div id="authLoginForm">
+      <label>📱 Numéro de téléphone (10 chiffres)</label><input id="authPhone" type="tel" inputmode="tel" autocomplete="username" placeholder="Ex : 01 97 00 00 00">
+      <label>🔐 Mot de passe</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Votre mot de passe">
+      <button class="btn vert" onclick="connexionCompte()">🔓 Se connecter</button>
+      <button class="auth-link" style="display:block;margin:12px auto 0" onclick="afficherRecuperation()">Mot de passe oublié ?</button>
+    </div>
+    <div id="authSignupForm" style="display:none">
+      <label>📱 Numéro de téléphone (01 XX XX XX XX)</label><input id="newPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ex : 01 97 00 00 00">
+      <label>🔐 Créez un mot de passe</label><input id="newPassword" type="password" autocomplete="new-password" placeholder="8 caractères minimum">
+      <label>📧 E-mail de récupération <span class="muted">(facultatif)</span></label><input id="newEmail" type="email" autocomplete="email" placeholder="facultatif">
+      <label>🏪 Nom du commerce</label><input id="newShop" placeholder="Ex : Boutique Chez Rachel">
+      <button class="btn vert" onclick="creerCompte()">✅ Créer mon compte</button>
+      <div class="auth-small">Un code de récupération pourra être conservé pour les cas où vous n'avez plus accès à votre e-mail.</div>
+    </div>
+    <div id="authRecoveryForm" style="display:none">
+      <h3 style="margin-bottom:4px">🔑 Récupérer mon compte</h3><p class="auth-sub">La connexion se fait avec votre numéro béninois et votre mot de passe. L’e-mail et le code de récupération servent à préparer la récupération du compte.</p>
+      <label>📧 E-mail de récupération</label><input id="recoveryEmail" type="email" placeholder="Votre e-mail">
+      <button class="btn vert" onclick="envoyerRecuperation()">📨 Envoyer la récupération</button>
+      <button class="btn outline" onclick="authMode('login')">← Retour à la connexion</button>
+    </div>
+    <div class="auth-device">Code appareil : <b id="authDeviceCode">—</b></div>
+    <p class="auth-small">Développé par <b>Etienne GNANHOUI</b></p>
+  </div>
+</div>
 <header>
 <div style="display:flex;align-items:center;gap:4px"><button id="btnRetour" onclick="go('menu')">←</button><h1 id="titreApp">🏪 Boutik Safe</h1></div>
 <div class="row" style="max-width:220px"><button id="badgeAlerte" class="btn rouge" style="display:none;margin:0;padding:7px" onclick="go('stock')">⚠️</button><button id="badgePremium" class="btn jaune" style="display:none;margin:0;padding:7px" onclick="go('premium')">⭐</button></div>
@@ -91,10 +126,12 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <div class="menu-grid">
   <div class="menu-tile" onclick="go('credit')"><span class="ico">💳</span><span class="lbl">Crédit</span><span class="badge" id="badgeCredit" style="display:none"></span></div>
   <div class="menu-tile" onclick="go('factures')"><span class="ico">🧾</span><span class="lbl">Factures</span></div>
+  <div class="menu-tile" onclick="go('historique')"><span class="ico">🗂️</span><span class="lbl">Historique</span></div>
   <div class="menu-tile" onclick="go('dashboard')"><span class="ico">📊</span><span class="lbl">Dashboard</span><span class="badge" id="lockDashboard" style="display:none;left:10px;right:auto;background:#1f2937">🔒</span></div>
   <div class="menu-tile" onclick="go('caisse')"><span class="ico">💰</span><span class="lbl">Caisse</span></div>
   <div class="menu-tile" onclick="go('fournisseurs')"><span class="ico">🚚</span><span class="lbl">Fournisseurs</span><span class="badge" id="badgeFournisseurs" style="display:none"></span><span class="badge" id="lockFournisseurs" style="display:none;left:10px;right:auto;background:#1f2937">🔒</span></div>
   <div class="menu-tile" onclick="go('parametres')"><span class="ico">⚙️</span><span class="lbl">Paramètres</span></div>
+  <div class="menu-tile" onclick="go('grandlivre')"><span class="ico">📒</span><span class="lbl">Grand Livre</span><span class="badge" id="lockGrandLivre" style="display:none;left:10px;right:auto;background:#1f2937">🔒</span></div>
   <div class="menu-tile" onclick="go('premium')"><span class="ico">⭐</span><span class="lbl">Premium</span><span class="badge" id="badgePremiumTile" style="display:none">!</span></div>
 </div>
 </section>
@@ -122,6 +159,27 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <div id="listeFacturesRecentes"></div>
 </section>
 
+<section id="e-historique" class="ecran">
+<h2>🗂️ Historique complet</h2>
+<p class="muted">Toutes les ventes du compte connecté, y compris celles enregistrées sur un autre téléphone ou un PC.</p>
+<div class="carte historique-tools">
+<label>🔎 Rechercher dans l’historique</label>
+<input id="rechercheHistorique" type="search" placeholder="Produit, date, montant ou référence…" oninput="rendreHistorique()">
+<div class="row"><div><label>Du</label><input id="historiqueDateDebut" type="date" onchange="rendreHistorique()"></div><div><label>Au</label><input id="historiqueDateFin" type="date" onchange="rendreHistorique()"></div></div>
+<button class="btn outline" onclick="reinitialiserRechercheHistorique()">↺ Réinitialiser la recherche</button>
+<button class="btn vert" onclick="exportHistoriqueRecherche()">📥 Exporter les résultats</button>
+</div>
+<div id="historiqueCompteur" class="historique-meta"></div>
+<div id="listeHistorique" class="historique-resultats"></div>
+</section>
+
+
+<section id="e-grandlivre" class="ecran">
+<h2>📒 Grand Livre — journal de l'entité</h2>
+<div class="carte"><b>Gestion par tiers et sous-comptes</b><p class="muted">Ce journal organise les écritures par clients, fournisseurs et autres tiers. Il constitue un outil de préparation comptable et doit être vérifié/validé par un professionnel conformément au référentiel OHADA applicable.</p></div>
+<div class="row"><button class="btn outline" onclick="ajouterTiers()">👤 Nouveau tiers</button><button class="btn outline" onclick="genererGrandLivre()">🔄 Actualiser</button></div>
+<div id="tiersListe"></div><div id="grandLivreTable"></div>
+</section>
 <section id="e-premium" class="ecran">
 <div class="premium-hero">
   <h2>⭐ Boutik Safe Premium</h2>
@@ -161,6 +219,7 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <div class="carte"><b>Seuil d'alerte stock</b><input id="seuilStock" type="number" min="0" step="0.1"><button class="btn vert" onclick="sauverParametres()">Enregistrer</button></div>
 <div class="carte"><b>🗂️ Historique complet des ventes</b><p class="muted" style="margin:4px 0 8px">Exporte, à tout moment, la totalité de l'historique de ventes enregistré depuis le début — distinct du rapport du jour.</p><button class="btn outline" onclick="exportHistorique()">📥 Exporter l'historique (Excel)</button></div>
 <div class="carte"><b>PIN de gestion</b><p class="muted">Le PIN protège le stock, la caisse, les fournisseurs et les paramètres.</p><button class="btn jaune" onclick="changerPin()">🔐 Modifier PIN / mot secret</button><button class="btn outline" onclick="testerNotification()">🔔 Tester notification</button></div>
+<div class="carte"><b>👤 Compte BoutikSafe</b><p id="cloudAccountStatus" class="muted">Compte non connecté</p><button class="btn outline" onclick="ouvrirCompteCloud()">🔐 Gérer mon compte</button><button class="btn gris" onclick="deconnecterCompteCloud()">Se déconnecter</button></div>
 <div class="carte"><b>Apparence</b><button class="btn gris" onclick="basculerTheme()">🌙 Mode sombre / clair</button></div>
 </section>
 
@@ -183,7 +242,7 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 
 <div id="m-fournisseur" class="modal"><div class="box"><button class="close" onclick="fermer('m-fournisseur')">✕</button><h2>Fournisseur</h2><label>Nom</label><input id="fNom"><label>Téléphone</label><input id="fTel"><button class="btn vert" onclick="sauverFournisseur()">Enregistrer</button></div></div>
 
-<div id="m-bienvenue" class="modal"><div class="box"><h2>👋 Bienvenue sur Boutik Safe</h2><p class="muted">Pour personnaliser votre application et vos rapports, indiquez le nom de votre entreprise ou boutique.</p><label>Nom de l'entreprise</label><input id="beNomEntreprise" placeholder="Ex : Boutique Chez Rachel"><button class="btn vert" onclick="validerBienvenue()">✅ Commencer</button></div></div>
+<div id="m-bienvenue" class="modal"><div class="box"><h2>👋 Bienvenue dans BoutikSafe</h2><p class="muted">Pour personnaliser votre application et vos rapports, indiquez le nom de votre entreprise ou boutique.</p><label>Nom de l'entreprise</label><input id="beNomEntreprise" placeholder="Ex : Boutique Chez Rachel"><button class="btn vert" onclick="validerBienvenue()">✅ Commencer</button></div></div>
 
 <div id="m-monnaie" class="modal"><div class="box"><h2>💵 Monnaie à rendre</h2><p class="muted">Facultatif — indique le montant reçu du client pour calculer la monnaie.</p><label>Total à payer</label><div id="monnaieTotal" style="font-weight:900;font-size:20px;margin:2px 0 10px"></div><label>Montant reçu</label><input id="montantRecu" type="number" step="0.01" oninput="calculerMonnaie()"><div id="resultatMonnaie" class="carte" style="margin-top:10px;display:none"></div><button class="btn vert" onclick="fermer('m-monnaie');document.getElementById('actionFactureLbl').textContent=(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())?'📤 Exporter la facture':'🖨️ Imprimer la facture';modal('m-facture-choix',true)">Continuer</button></div></div>
 
@@ -205,6 +264,8 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 
 <div id="pinScreen" class="pin"><div class="pinbox"><div style="font-size:46px">🔐</div><h2 id="pinTitre">Code PIN</h2><p id="pinSousTitre">Protège ta boutique</p><div class="dots" id="dots"></div><div class="keys" id="keys"></div><button id="pinForgot" class="link" onclick="recupPin()">Code oublié ?</button><div id="secretZone" style="display:none"><label style="color:#fff">Mot secret</label><input id="secretInput" style="color:#111"><button class="btn vert" onclick="verifierSecret()">Réinitialiser</button><button class="link" onclick="recupSupport()">Je n'ai plus mon mot secret</button></div><div id="supportZone" style="display:none"><div id="deviceCode" class="kpi"></div><button class="btn jaune" onclick="envoyerRecup()">💬 Envoyer au support</button><label style="color:#fff">Code de déverrouillage</label><input id="masterCode" style="color:#111"><button class="btn vert" onclick="validerMaitre()">Réinitialiser</button></div></div></div>
 
+
+
 <script>
 const SUPPORT="2290163495733", SECRET_SUPPORT="JESUS4312", DEPOT="0163495733", PAIEMENT_MOOV="0163495733", PAIEMENT_MTN="0191283141", PAIEMENT_CELTIS="0140791729";
 const INIT=[{id:"p1",nom:"Lait en poudre",prix:1500,achat:1000,stock:12,codeBarre:"",emoji:"🥛",peremption:""},{id:"p2",nom:"Pain",prix:250,achat:150,stock:3,codeBarre:"",emoji:"🍞",peremption:""},{id:"p3",nom:"Savon",prix:500,achat:300,stock:20,codeBarre:"",emoji:"🧼",peremption:""},{id:"p4",nom:"Riz (kg)",prix:700,achat:550,stock:8,codeBarre:"",emoji:"🍚",peremption:""}];
@@ -216,9 +277,9 @@ let config=get("configBoutik",{nom:"Boutik Safe",seuil:5,theme:"clair"}), panier
 let device=get("codeAppareil",null);if(!device){device=Math.random().toString(36).slice(2,8).toUpperCase();set("codeAppareil",device)}
 let pin=get("pinBoutique",null), secret=get("motSecretPIN",null), premiumUntil=get("expirationPremium",null), essai=get("essaiDebut",null);if(!essai){essai=Date.now();set("essaiDebut",essai)}
 const fmt=n=>new Intl.NumberFormat("fr-FR").format(Number(n)||0)+" F", id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6), today=()=>new Date().toISOString().slice(0,10), show=t=>{let e=document.getElementById("flash");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2200)};
-const saveAll=()=>{set("produits",produits);set("ventes",ventes);set("credits",credits);set("mouvementsCaisse",mouvements);set("fournisseurs",fournisseurs);set("dettesFournisseurs",dettes);set("inventaires",inventaires);set("panierSauve",panier)};
-const ECRANS_SECONDAIRES=["credit","dashboard","caisse","fournisseurs","parametres","premium","factures"];
-const PREMIUM_LOCKED=["rapport","dashboard","fournisseurs"];
+const saveAll=()=>{set("produits",produits);set("ventes",ventes);set("credits",credits);set("mouvementsCaisse",mouvements);set("fournisseurs",fournisseurs);set("dettesFournisseurs",dettes);set("inventaires",inventaires);set("panierSauve",panier);setTimeout(()=>window.bsSync&&window.bsSync(),0)};
+const ECRANS_SECONDAIRES=["credit","dashboard","caisse","fournisseurs","parametres","premium","factures","historique","grandlivre"];
+const PREMIUM_LOCKED=["rapport","dashboard","fournisseurs","grandlivre"];
 function go(id){
  if((id==="stock"||id==="caisse"||id==="fournisseurs"||id==="parametres")&&!sessionStorage.getItem("bsUnlocked")){ouvrirPin();return}
  if(PREMIUM_LOCKED.includes(id)&&!calculPremium().actif){show("⭐ Fonction Premium — essai terminé");id="premium"}
@@ -226,7 +287,7 @@ function go(id){
  set("dernierEcran",id);
  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("actif",b.dataset.go===id||(b.dataset.go==="menu"&&ECRANS_SECONDAIRES.includes(id))));
  document.getElementById("btnRetour").style.display=ECRANS_SECONDAIRES.includes(id)?"inline-block":"none";
- ({vente:rendreVente,stock:rendreStock,credit:rendreCredit,rapport:rendreRapport,dashboard:rendreDashboard,caisse:rendreCaisse,fournisseurs:rendreFournisseurs,parametres:rendreParametres,premium:rendrePremium,factures:rendreFacturesRecentes,menu:rendreMenu}[id]||(()=>{}))();
+ ({vente:rendreVente,stock:rendreStock,credit:rendreCredit,rapport:rendreRapport,dashboard:rendreDashboard,caisse:rendreCaisse,fournisseurs:rendreFournisseurs,parametres:rendreParametres,premium:rendrePremium,factures:rendreFacturesRecentes,historique:rendreHistorique,grandlivre:rendreGrandLivre,menu:rendreMenu}[id]||(()=>{}))();
 }
 function rendreMenu(){
  let nbCredit=credits.filter(c=>!c.paye).length;badgeCredit.style.display=nbCredit?"block":"none";badgeCredit.textContent=nbCredit;
@@ -240,7 +301,7 @@ function rendreMenu(){
  if(cp.premiumActif){
    b.style.display="block";b.innerHTML="<b class='success'>⭐ Premium actif</b><p class='muted' style='margin:4px 0 0'>Toutes les fonctionnalités sont débloquées.</p>";
  }else if(cp.essaiOk){
-   b.style.display="block";b.innerHTML="<b>⏳ Essai gratuit : "+cp.joursRestants+" jour"+(cp.joursRestants>1?"s":"")+" restant"+(cp.joursRestants>1?"s":"")+"</b><p class='muted' style='margin:4px 0 0'>Rapports, Dashboard et Fournisseurs seront verrouillés à la fin de l'essai. <span class='link' style=\"margin:0;display:inline\" onclick=\"go('premium')\">Passer à Premium</span></p>";
+   b.style.display="block";b.innerHTML="<b>⏳ Essai gratuit : "+cp.joursRestants+" jour"+(cp.joursRestants>1?"s":"")+" restant"+(cp.joursRestants>1?"s":"")+"</b><p class='muted' style='margin:4px 0 0'>Les fonctions Premium seront verrouillées à la fin de l'essai. <span class='link' style=\"margin:0;display:inline\" onclick=\"go('premium')\">Passer à Premium</span></p>";
  }else{
    b.style.display="block";b.innerHTML="<b class='danger'>🔒 Essai terminé</b><p class='muted' style='margin:4px 0 0'>Rapports, Dashboard et Fournisseurs sont verrouillés. <span class='link' style=\"margin:0;display:inline\" onclick=\"go('premium')\">Activer Premium</span></p>";
  }
@@ -697,6 +758,10 @@ async function exporterFichier(nomFichier,buf,mime){
 }
 async function exportExcel(){if(!window.ExcelJS)return show("Excel indisponible");let wb=new ExcelJS.Workbook(),ws=wb.addWorksheet("Ventes");ws.addRow(["Date","Produit","Quantité","Prix vente","Prix achat","Total","Profit"]);ventes.forEach(v=>v.articles.forEach(a=>ws.addRow([v.date.slice(0,10),a.nom,a.quantite,a.prix,a.achat,a.prix*a.quantite,(a.prix-a.achat)*a.quantite])));ajusterColonnes(ws);let wp=wb.addWorksheet("Produits");wp.addRow(["Produit","Vente","Achat","Stock","Code-barres","Emoji","Photo"]);produits.forEach(p=>wp.addRow([p.nom,p.prix,p.achat,p.stock,p.codeBarre,p.emoji,p.photo||""]));ajusterColonnes(wp);let wd=wb.addWorksheet("Dettes");wd.addRow(["Fournisseur","Montant","Statut","Date"]);dettes.forEach(d=>{let f=fournisseurs.find(x=>x.id===d.fournisseurId);wd.addRow([f?.nom||"",d.montant,d.paye?"Payé":"Impayé",d.date])});ajusterColonnes(wd);let buf=await wb.xlsx.writeBuffer();await exporterFichier((config.nom||"boutik_safe").replace(/[^a-z0-9]+/gi,"_")+"_export_"+today()+".xlsx",buf,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
 function exportPDF(){let {jsPDF}=window.jspdf;if(!jsPDF)return;let doc=new jsPDF(),c=calculJour();doc.text("Rapport complet — "+config.nom,14,15);doc.autoTable({startY:22,head:[["Indicateur","Valeur"]],body:[["CA du jour",fmt(c.ca)],["Bénéfice du jour",fmt(c.benef)],["Résultat net",fmt(resultatNet())],["Dettes fournisseurs",fmt(totalDettes())],["Dépenses",fmt(totalDepenses())],["Nombre de ventes",String(c.vs.length)]]});let y=doc.lastAutoTable.finalY+8;doc.autoTable({startY:y,head:[["Produit","Stock","Prix vente","Prix achat"]],body:produits.map(p=>[p.nom,p.stock,fmt(p.prix),fmt(p.achat)])});let buf=doc.output("arraybuffer");exporterFichier("rapport_complet_"+today()+".pdf",buf,"application/pdf")}
+function ventesHistoriqueFiltrees(){const q=(document.getElementById('rechercheHistorique')?.value||'').trim().toLowerCase(),debut=document.getElementById('historiqueDateDebut')?.value||'',fin=document.getElementById('historiqueDateFin')?.value||'';return [...ventes].filter(v=>{const d=String(v.date||'').slice(0,10),texte=[v.id,v.date,v.total,...(v.articles||[]).flatMap(a=>[a.nom,a.quantite,a.prix,a.achat])].join(' ').toLowerCase();return(!q||texte.includes(q))&&(!debut||d>=debut)&&(!fin||d<=fin)}).sort((a,b)=>new Date(b.date)-new Date(a.date));}
+function rendreHistorique(){const zone=document.getElementById('listeHistorique');if(!zone)return;const rows=ventesHistoriqueFiltrees(),total=rows.reduce((s,v)=>s+(Number(v.total)||0),0),c=document.getElementById('historiqueCompteur');if(c)c.innerHTML=`<span>${rows.length} vente${rows.length>1?'s':''} trouvée${rows.length>1?'s':''}</span><span class="historique-total">Total : ${fmt(total)}</span>`;if(!rows.length){zone.innerHTML='<div class="carte historique-empty">Aucune vente ne correspond à votre recherche.</div>';return;}zone.innerHTML=rows.map(v=>{const articles=(v.articles||[]).map(a=>`${String(a.nom).replace(/</g,'&lt;')} × ${a.quantite}`).join(', ');return `<div class="carte"><div class="historique-meta"><b>${String(v.date||'').slice(0,16).replace('T',' ')}</b><span>${v.id||''}</span></div><div style="margin-top:7px;font-weight:800">${articles||'Détails indisponibles'}</div><div class="historique-meta" style="margin-top:8px"><span>${(v.articles||[]).length} article${(v.articles||[]).length>1?'s':''}</span><strong class="historique-total">${fmt(v.total)}</strong></div></div>`}).join('');}
+function reinitialiserRechercheHistorique(){['rechercheHistorique','historiqueDateDebut','historiqueDateFin'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});rendreHistorique();}
+async function exportHistoriqueRecherche(){const rows=ventesHistoriqueFiltrees();if(!rows.length)return show('Aucun résultat à exporter');if(!window.ExcelJS)return show('Excel indisponible');let wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('Résultats historique');ws.addRow(['Date','Heure','Référence','Produit','Quantité','Prix unitaire','Total vente']);rows.forEach(v=>(v.articles||[]).forEach(a=>ws.addRow([String(v.date).slice(0,10),String(v.date).slice(11,16),v.id,a.nom,a.quantite,a.prix,v.total])));ajusterColonnes(ws);let buf=await wb.xlsx.writeBuffer();await exporterFichier((config.nom||'boutik_safe').replace(/[^a-z0-9]+/gi,'_')+'_recherche_historique_'+today()+'.xlsx',buf,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');}
 async function exportHistorique(){if(!window.ExcelJS)return show("Excel indisponible");if(!ventes.length)return show("Aucune vente enregistrée pour le moment");let wb=new ExcelJS.Workbook();
  let ws=wb.addWorksheet("Historique des ventes");ws.addRow(["Date","Heure","Produit","Quantité","Prix unitaire","Total ligne"]);
  [...ventes].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(v=>v.articles.forEach(a=>ws.addRow([v.date.slice(0,10),v.date.slice(11,16),a.nom,a.quantite,a.prix,a.prix*a.quantite])));
@@ -717,7 +782,7 @@ function verifierPremierLancement(){if(!get("entrepriseConfiguree",false)){modal
 function basculerTheme(){config.theme=config.theme==="sombre"?"clair":"sombre";set("configBoutik",config);appliquerTheme()}
 function appliquerTheme(){document.body.classList.toggle("dark",config.theme==="sombre")}
 function rafraichir(){document.getElementById("titreApp").textContent="🏪 "+config.nom;let n=produits.filter(p=>p.stock<=Number(config.seuil)).length;badgeAlerte.style.display=n?"block":"none";badgeAlerte.textContent="⚠️ "+n;badgePremium.style.display=calculPremium().actif?"none":"block"}
-function calculPremium(){let e=Number(essai)||Date.now();let finEssai=e+7*86400000;let essaiOk=Date.now()<finEssai,p=Number(premiumUntil||0)>Date.now();let joursRestants=Math.max(0,Math.ceil((finEssai-Date.now())/86400000));return{actif:essaiOk||p,essaiOk,premiumActif:p,joursRestants}}
+function calculPremium(){let e=Number(essai)||Date.now();let finEssai=e+14*86400000;let essaiOk=Date.now()<finEssai,p=Number(premiumUntil||0)>Date.now();let joursRestants=Math.max(0,Math.ceil((finEssai-Date.now())/86400000));return{actif:essaiOk||p,essaiOk,premiumActif:p,joursRestants}}
 function rendrePremium(){statutPremium.innerHTML=calculPremium().actif?"<b class='success'>⭐ Accès actif</b>":"<b class='danger'>Premium/essai expiré</b>";codeAppareil.textContent=device}
 function checksum(s){let h=0;for(let c of s)h=(h*31+c.charCodeAt(0))%100000;return String(h).padStart(4,"0").slice(-4)}
 function activerPremium(){let attendu="BSAFE-"+device+"-"+checksum(device+SECRET_SUPPORT+"PREMIUM");if(clePremium.value.trim().toUpperCase()!==attendu)return show("❌ Clé invalide");premiumUntil=Date.now()+365*86400000;set("expirationPremium",premiumUntil);rendrePremium();rafraichir();show("✅ Premium activé")}
@@ -742,15 +807,148 @@ function envoyerRecup(){window.open("https://wa.me/"+SUPPORT+"?text="+encodeURIC
 function validerMaitre(){let attendu=checksum(device+SECRET_SUPPORT+"PIN");if(masterCode.value.trim()!==attendu)return show("❌ Code incorrect");let np=prompt("Nouveau PIN à 4 chiffres :");if(!/^\d{4}$/.test(np))return show("❌ PIN invalide");pin=np;set("pinBoutique",pin);pinScreen.classList.remove("on");show("✅ PIN réinitialisé")}
 function testerNotification(){if(!("Notification"in window))return show("Notifications non supportées");Notification.requestPermission().then(p=>{if(p==="granted")new Notification(config.nom,{body:"Test de notification Boutik Safe"});else show("Permission refusée")})}
 function notifierStock(){if("Notification"in window&&Notification.permission==="granted"){let ps=produits.filter(p=>p.stock<=Number(config.seuil));if(ps.length)new Notification(config.nom,{body:"Stock faible : "+ps.map(p=>p.nom).join(", ")})}}
-appliquerTheme();verifierClotureJournaliere();rendreVente();rafraichir();setTimeout(notifierStock,1200);setTimeout(verifierPremierLancement,300);
+appliquerTheme();
+
 // Restaure l'écran où l'utilisateur se trouvait avant que le téléphone n'ait libéré la mémoire de l'app
 {let dernier=get("dernierEcran","vente");if(dernier&&dernier!=="vente")go(dernier)}
 </script>
 
+
+<script>
+const SUPABASE_URL_V2="https://jgjcgsuahowjmtroxxuc.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY_V2="sb_publishable_WXw98qovz8EUplNcbmEg1w_rwL6q_yE";
+let bsSession=null;
+function authMode(mode){
+  document.getElementById('authLoginForm').style.display=mode==='login'?'block':'none';
+  document.getElementById('authSignupForm').style.display=mode==='signup'?'block':'none';
+  document.getElementById('authRecoveryForm').style.display='none';
+  document.getElementById('tabLogin').classList.toggle('on',mode==='login');
+  document.getElementById('tabSignup').classList.toggle('on',mode==='signup');
+  authClear();
+}
+function authClear(){['authError','authMsg'].forEach(id=>{let e=document.getElementById(id);e.style.display='none';e.textContent=''})}
+function authMessage(text,error=false){let id=error?'authError':'authMsg';let e=document.getElementById(id);e.textContent=text;e.style.display='block';}
+function normalizePhone(v){
+  let x=String(v||'').replace(/\D/g,'');
+  if(x.startsWith('00229')) x=x.slice(5);
+  if(x.startsWith('229')) x=x.slice(3);
+  if(x.length===8) x='01'+x;
+  if(x.length===10 && x.startsWith('01')) return '+229'+x;
+  return x?('+'+x):'';
+}
+function authHeaders(){return {'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY_V2,'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY_V2}}
+async function supa(path,body,token){let h=authHeaders();if(token)h.Authorization='Bearer '+token;let r=await fetch(SUPABASE_URL_V2+path,{method:'POST',headers:h,body:JSON.stringify(body)});let j={};try{j=await r.json()}catch{}if(!r.ok)throw new Error(j.error_description||j.msg||j.message||'Erreur Supabase');return j}
+function codeRecup(){let chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',a='';for(let i=0;i<12;i++)a+=chars[Math.floor(Math.random()*chars.length)];return a.slice(0,4)+'-'+a.slice(4,8)+'-'+a.slice(8)}
+async function creerCompte(){
+  authClear();
+  let phone=normalizePhone(newPhone.value),password=newPassword.value,
+      email=newEmail.value.trim(),shop=newShop.value.trim(),code=codeRecup();
+
+  if(!/^\+22901\d{8}$/.test(phone))
+    return authMessage('❌ Numéro béninois invalide. Utilise le format 01 XX XX XX XX.',true);
+  if(password.length<8)
+    return authMessage('❌ Le mot de passe doit contenir au moins 8 caractères.',true);
+  if(!shop)
+    return authMessage('❌ Indique le nom du commerce.',true);
+
+  try{
+    // Téléphone = identité Supabase. L'e-mail facultatif est conservé
+    // dans les métadonnées et n'est PAS envoyé comme champ "email".
+    let metadata={
+      nom_commerce:shop,
+      email_recuperation:email||null,
+      code_recuperation:code
+    };
+    let j=await supa('/auth/v1/signup',{phone,password,data:metadata});
+
+    authMessage(j.session
+      ? '✅ Compte créé et connecté.'
+      : '✅ Compte créé. Connecte-toi avec ton numéro 01XXXXXXXX et ton mot de passe.'
+    );
+
+    if(j.session){
+      bsSession=j.session;
+      if(typeof bsAfterAuth==='function') await bsAfterAuth(j.session);
+      else ouvrirApplicationApresConnexion();
+    }
+  }catch(e){
+    authMessage('❌ '+e.message,true);
+  }
+}
+async function connexionCompte(){
+ authClear();let phone=normalizePhone(authPhone.value),password=authPassword.value;if(!/^\+22901\d{8}$/.test(phone))return authMessage('❌ Numéro béninois invalide. Utilise le format 01 XX XX XX XX.',true);if(!password)return authMessage('❌ Entre ton mot de passe.',true);
+ try{let j=await supa('/auth/v1/token?grant_type=password',{phone,password});bsSession=j;localStorage.setItem('bs_auth_session',JSON.stringify(j));if(typeof bsClient!=='undefined'&&bsClient&&j.access_token&&j.refresh_token){try{await bsClient.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token})}catch(e){console.warn(e)}}if(typeof bsAfterAuth==='function'&&j.user){await bsAfterAuth(j)}else{ouvrirApplicationApresConnexion();}}
+ catch(e){authMessage('❌ Numéro ou mot de passe incorrect.',true)}
+}
+function afficherRecuperation(){document.getElementById('authLoginForm').style.display='none';document.getElementById('authSignupForm').style.display='none';document.getElementById('authRecoveryForm').style.display='block';document.getElementById('tabLogin').classList.remove('on');document.getElementById('tabSignup').classList.remove('on');authClear()}
+async function envoyerRecuperation(){
+ authClear();let email=recoveryEmail.value.trim();if(!email)return authMessage('❌ Entre ton e-mail de récupération.',true);
+ try{await fetch(SUPABASE_URL_V2+'/auth/v1/recover',{method:'POST',headers:authHeaders(),body:JSON.stringify({email})});authMessage('📨 Si cette adresse est associée à un compte, un message de récupération a été envoyé.');}
+ catch(e){authMessage('❌ Impossible de lancer la récupération.',true)}
+}
+function ouvrirApplicationApresConnexion(){
+ document.getElementById('authScreen').classList.add('hidden');
+ sessionStorage.setItem('bsLoggedIn','1');
+ // Chaque compte garde ses données locales séparées dès que possible.
+ let uid=bsSession?.user?.id||'local';localStorage.setItem('bs_current_user_id',uid);
+ // L'ancien stockage local est conservé pour éviter toute perte pendant la migration.
+ verifierClotureJournaliere();rendreVente();rafraichir();setTimeout(notifierStock,1200);setTimeout(verifierPremierLancement,300);
+ let dernier=get('dernierEcran','vente');if(dernier&&dernier!=='vente')go(dernier);
+}
+function deconnexionCompte(){localStorage.removeItem('bs_auth_session');sessionStorage.removeItem('bsLoggedIn');bsSession=null;location.reload()}
+async function initialiserAuthentification(){
+ let d=document.getElementById('authDeviceCode');if(d)d.textContent=device;
+ try{let saved=JSON.parse(localStorage.getItem('bs_auth_session')||'null');if(saved?.access_token){bsSession=saved;ouvrirApplicationApresConnexion();return}}catch{}
+ document.getElementById('authScreen').classList.remove('hidden');
+}
+</script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js'));
 }
 </script>
 
-</body></html>
+\n<script>
+/* === BoutikSafe V2 : compte, synchronisation, Premium lié au compte, journal de l'entité === */
+const BS_SUPABASE_URL='https://jgjcgsuahowjmtroxxuc.supabase.co';
+const BS_SUPABASE_KEY='sb_publishable_WXw98qovz8EUplNcbmEg1w_rwL6q_yE';
+let bsClient=null,bsUser=null,bsSession=null,bsCloudReady=false,bsSyncBusy=false;
+try{if(window.supabase?.createClient)bsClient=window.supabase.createClient(BS_SUPABASE_URL,BS_SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true}})}catch(e){console.warn(e)}
+const bsNormPhone=p=>{p=String(p||'').replace(/[^0-9+]/g,'');if(p.startsWith('00'))p='+'+p.slice(2);if(!p.startsWith('+')&&p.startsWith('229'))p='+'+p;return p};
+const bsMsg=t=>{const el=document.getElementById('bsAuthMsg');if(el)el.textContent=t||''};
+function bsShowSignup(){document.getElementById('bsAuthTitle').textContent='Créer votre compte';document.getElementById('bsAuthIntro').textContent='Le numéro de téléphone identifie votre compte. L’e-mail reste facultatif et sert à la récupération.';document.getElementById('bsEmailLabel').style.display='block';document.getElementById('bsEmail').style.display='block';document.getElementById('bsNameLabel').style.display='block';document.getElementById('bsName').style.display='block';document.querySelector('#bsAuthForm .btn.vert').textContent='Créer mon compte';document.querySelector('#bsAuthForm .btn.vert').onclick=bsSignup;document.querySelector('#bsAuthForm .btn.outline').textContent='J’ai déjà un compte';document.querySelector('#bsAuthForm .btn.outline').onclick=bsResetLogin;bsMsg('');}
+function bsResetLogin(){location.reload()}
+async function bsSignup(){if(!bsClient)return bsMsg('Connexion cloud indisponible. Vous pouvez continuer hors connexion.');let phone=bsNormPhone(bsPhone.value),pass=bsPassword.value.trim(),email=bsEmail.value.trim()||null,name=bsName.value.trim()||'Boutik Safe';if(!phone||pass.length<6)return bsMsg('Entrez un numéro et un mot de passe d’au moins 6 caractères.');bsMsg('Création du compte…');let payload={phone,password:pass,options:{data:{nom_commerce:name,email_recuperation:email}}};let {data,error}=await bsClient.auth.signUp(payload);if(error)return bsMsg('❌ '+error.message);if(!data.session)return bsMsg('Compte créé. Selon la configuration Supabase, une vérification peut être demandée.');bsAfterAuth(data.session);}
+async function bsLogin(){if(!bsClient)return bsMsg('Connexion cloud indisponible.');let phone=bsNormPhone(bsPhone.value),pass=bsPassword.value;if(!phone||!pass)return bsMsg('Entrez votre numéro et votre mot de passe.');bsMsg('Connexion…');let {data,error}=await bsClient.auth.signInWithPassword({phone,password:pass});if(error)return bsMsg('❌ Numéro ou mot de passe incorrect.');bsAfterAuth(data.session);}
+async function bsForgotPassword(){if(!bsClient)return bsMsg('Pour une récupération automatique, ajoutez un e-mail de récupération dans votre compte.');let email=prompt('Entrez votre e-mail de récupération :');if(!email)return;let {error}=await bsClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});bsMsg(error?'❌ '+error.message:'📧 Si cet e-mail est associé au compte, un message de récupération a été envoyé.');}
+function bsUseOffline(){document.getElementById('authScreen').classList.add('hidden');set('bsOfflineMode',true);show('Mode hors connexion activé — les données restent sur cet appareil.');}
+async function bsAfterAuth(session){bsSession=session;bsUser=session.user;bsCloudReady=true;set('bsUserId',bsUser.id);set('bsPhone',bsUser.phone||'');document.getElementById('authScreen').classList.add('hidden');set('bsOfflineMode',false);await bsEnsureProfile();await bsPullPremium();let cloudHasData=await bsPull();if(!cloudHasData&&bsLocalHasData())await bsSync();bsUpdateAccountUI();rendreHistorique();}
+async function bsEnsureProfile(){if(!bsClient||!bsUser)return;let name=bsUser.user_metadata?.nom_commerce||config.nom||'Boutik Safe';await bsClient.from('profiles').upsert({id:bsUser.id,phone:bsUser.phone||null,nom_commerce:name},{onConflict:'id'});}
+async function bsPullPremium(){if(!bsClient||!bsUser)return;let {data,error}=await bsClient.from('subscriptions').select('plan,status,expires_at').eq('user_id',bsUser.id).eq('status','active').order('expires_at',{ascending:false}).limit(1);if(!error&&data?.[0]){let until=new Date(data[0].expires_at).getTime();set('cloudPremiumUntil',until);premiumUntil=until;}}
+function bsPremiumState(){let e=Number(essai)||Date.now();let trial=Date.now()<e+14*86400000;let cloud=Number(get('cloudPremiumUntil',0))>Date.now();let local=Number(premiumUntil||0)>Date.now();return{actif:trial||cloud||local,essaiOk:trial,premiumActif:cloud||local,joursRestants:Math.max(0,Math.ceil((e+14*86400000-Date.now())/86400000))};}
+window.bsOriginalCalculPremium=window.calculPremium;window.calculPremium=bsPremiumState;
+async function bsUpsert(table,rows){if(!bsClient||!bsUser||!rows?.length)return;let out=rows.map(x=>({...x,user_id:bsUser.id}));let {error}=await bsClient.from(table).upsert(out,{onConflict:'id'});if(error)console.warn('sync '+table,error.message);}
+function bsUuid(){return crypto?.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{let r=Math.random()*16|0,v=c==='x'?r:(r&3|8);return v.toString(16)})}
+function bsEnsureIds(){for(const arr of [produits,ventes,credits,fournisseurs,dettes,mouvements,inventaires])for(const x of arr){if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x.id)){x.id=bsUuid()}}saveAllNoSync();}
+function saveAllNoSync(){set('produits',produits);set('ventes',ventes);set('credits',credits);set('mouvementsCaisse',mouvements);set('fournisseurs',fournisseurs);set('dettesFournisseurs',dettes);set('inventaires',inventaires)}
+async function bsSync(){if(bsSyncBusy||!bsClient||!bsUser)return;bsSyncBusy=true;try{bsEnsureIds();await bsUpsert('produits',produits.map(p=>({id:p.id,nom:p.nom,prix:Number(p.prix)||0,achat:Number(p.achat)||0,stock:Number(p.stock)||0,code_barre:p.codeBarre||null,emoji:p.emoji||null,photo:p.photo||null,peremption:p.peremption||null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()})));await bsUpsert('vendeurs',[]);await bsUpsert('credits',credits.map(c=>({id:c.id,client_nom:c.client||'',montant:Number(c.montant)||0,paye:!!c.paye,date:c.date?new Date(c.date).toISOString():new Date().toISOString()})));await bsUpsert('dettes',dettes.map(d=>({id:d.id,fournisseur_nom:(fournisseurs.find(f=>f.id===d.fournisseurId)||{}).nom||'',montant:Number(d.montant)||0,motif:d.motif||'',paye:!!d.paye,date:d.date?new Date(d.date).toISOString():new Date().toISOString()})));await bsUpsert('ventes',ventes.map(v=>({id:v.id,vendeur_nom:v.vendeurNom||'',date:new Date(v.date).toISOString(),total:Number(v.total)||0,created_at:new Date(v.date).toISOString()})));let lignes=[];ventes.forEach(v=>(v.articles||[]).forEach((a,i)=>lignes.push({id:bsUuidFromString(v.id+':'+i),vente_id:v.id,produit_nom:a.nom,quantite:Number(a.quantite)||0,prix:Number(a.prix)||0,achat:Number(a.achat)||0,user_id:bsUser.id})));if(lignes.length)await bsClient.from('ventes_lignes').upsert(lignes);let facts=get('facturesRecentes',[]).map(f=>({id:bsUuid(),numero:f.numero,client:f.client||'',date:new Date(f.date).toISOString(),total:Number(f.total)||0,recu:f.recu==null?null:Number(f.recu),monnaie:f.monnaie==null?null:Number(f.monnaie),articles:f.articles||[],created_at:new Date(f.date).toISOString(),user_id:bsUser.id}));if(facts.length)await bsClient.from('factures').upsert(facts);await bsBuildJournal();}finally{bsSyncBusy=false}}
+async function bsBuildJournal(){if(!bsClient||!bsUser)return;let rows=[];ventes.forEach(v=>{rows.push({id:bsUuid(),date:new Date(v.date).toISOString(),compte_debit:'571',libelle_debit:'Caisse',compte_credit:'701',libelle_credit:'Ventes',montant:Number(v.total)||0,piece_reference:v.id,created_at:new Date(v.date).toISOString(),user_id:bsUser.id})});if(rows.length)await bsClient.from('ecritures_comptables').upsert(rows);}
+function bsLocalHasData(){return produits.length>0||ventes.length>0||credits.length>0||dettes.length>0||fournisseurs.length>0||mouvements.length>0;}
+function bsUuidFromString(str){let h1=0x811c9dc5,h2=0x9e3779b9,h3=0x85ebca6b,h4=0xc2b2ae35;for(let i=0;i<str.length;i++){let c=str.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,2246822507);h3=Math.imul(h3^c,3266489909);h4=Math.imul(h4^c,668265263)}let hex=[h1,h2,h3,h4].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');return hex.slice(0,8)+'-'+hex.slice(8,12)+'-4'+hex.slice(13,16)+'-8'+hex.slice(17,20)+'-'+hex.slice(20,32);}
+async function bsPull(){if(!bsClient||!bsUser)return false;try{const [pr,vr]=await Promise.all([bsClient.from('produits').select('*').eq('user_id',bsUser.id),bsClient.from('ventes').select('*').eq('user_id',bsUser.id)]);if(pr.error)console.warn('pull produits',pr.error.message);if(vr.error)console.warn('pull ventes',vr.error.message);const cloudProducts=pr.data||[],cloudSales=vr.data||[];const cloudHasData=cloudProducts.length>0||cloudSales.length>0;if(!cloudHasData){rendreVente();rendreHistorique();return false;}if(cloudProducts.length){produits=cloudProducts.map(p=>({id:p.id,nom:p.nom,prix:Number(p.prix)||0,achat:Number(p.achat)||0,stock:Number(p.stock)||0,codeBarre:p.code_barre||'',emoji:p.emoji||'📦',photo:p.photo||'',peremption:p.peremption||''}));set('produits',produits)}else{produits=[];set('produits',produits)}if(cloudSales.length){const {data:ls,error:le}=await bsClient.from('ventes_lignes').select('*').eq('user_id',bsUser.id);if(le)console.warn('pull ventes_lignes',le.message);const lignes=ls||[];ventes=cloudSales.map(v=>({id:v.id,date:v.date,total:Number(v.total)||0,articles:lignes.filter(l=>l.vente_id===v.id).map(l=>({nom:l.produit_nom,quantite:Number(l.quantite)||0,prix:Number(l.prix)||0,achat:Number(l.achat)||0}))}));set('ventes',ventes)}else{ventes=[];set('ventes',ventes)}rendreVente();rafraichir();rendreHistorique();return true}catch(e){console.warn('pull cloud',e);return false;}}
+window.bsSync=async()=>{if(bsCloudReady){await bsSync();}};
+function bsUpdateAccountUI(){let el=document.getElementById('cloudAccountStatus');if(el)el.innerHTML=bsUser?'<span class="bs-account-badge">✓ '+(bsUser.phone||'Compte connecté')+'</span>':'Compte non connecté';}
+function ouvrirCompteCloud(){if(!bsUser){document.getElementById('authScreen').classList.remove('hidden');return}show('Compte connecté : '+(bsUser.phone||''));}
+async function deconnecterCompteCloud(){if(bsClient)await bsClient.auth.signOut();bsUser=null;bsSession=null;bsCloudReady=false;localStorage.removeItem('bsUserId');document.getElementById('authScreen').classList.remove('hidden');}
+function ajouterTiers(){let nom=prompt('Nom du client, fournisseur ou autre tiers :');if(!nom)return;let type=prompt('Type : client / fournisseur / autre','client')||'autre';let tiers=get('tiersBoutik',[]);tiers.push({id:bsUuid(),nom,type,created_at:new Date().toISOString()});set('tiersBoutik',tiers);rendreGrandLivre();}
+function rendreGrandLivre(){let tiers=get('tiersBoutik',[]);document.getElementById('tiersListe').innerHTML=tiers.length?tiers.map(t=>`<div class="ligne"><div class="infos"><b>${t.nom}</b><div class="muted">${t.type}</div></div></div>`).join(''):'<p class="muted">Aucun sous-compte de tiers. Ajoutez un client, fournisseur ou autre tiers.</p>';genererGrandLivre();}
+function genererGrandLivre(){let rows=[];ventes.forEach(v=>(v.articles||[]).forEach(a=>rows.push({date:v.date,ref:v.id,tiers:'Client / caisse',debit:'571',credit:'701',libelle:'Vente '+a.nom,montant:Number(a.prix)*Number(a.quantite)})));credits.forEach(c=>rows.push({date:c.date,ref:c.id,tiers:c.client,debit:'411',credit:'701',libelle:'Vente à crédit',montant:Number(c.montant)}));dettes.forEach(d=>rows.push({date:d.date,ref:d.id,tiers:(fournisseurs.find(f=>f.id===d.fournisseurId)||{}).nom||'Fournisseur',debit:'601',credit:'401',libelle:d.motif||'Dette fournisseur',montant:Number(d.montant)}));rows.sort((a,b)=>String(a.date).localeCompare(String(b.date)));let html='<div class="carte"><b>Journal de l’entité</b><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:12px"><thead><tr><th>Date</th><th>Tiers</th><th>Débit</th><th>Crédit</th><th>Libellé</th><th>Montant</th></tr></thead><tbody>'+rows.map(r=>`<tr><td>${String(r.date).slice(0,10)}</td><td>${r.tiers}</td><td>${r.debit}</td><td>${r.credit}</td><td>${r.libelle}</td><td>${fmt(r.montant)}</td></tr>`).join('')+'</tbody></table></div></div>';document.getElementById('grandLivreTable').innerHTML=html||'<p class="muted">Aucune écriture.</p>';}
+// Remplace l'ancien mécanisme de Premium par un état compte + essai + secours local.
+function rendrePremium(){let st=bsPremiumState();statutPremium.innerHTML=st.actif?`<b class="success">⭐ Accès actif</b><div class="muted">${st.premiumActif?'Premium compte actif':'Essai gratuit — '+st.joursRestants+' jour(s)'}</div>`:`<b class="danger">Premium/essai expiré</b>`;codeAppareil.textContent=device}
+const bsOriginalGo=window.go;
+window.go=function(id){if((id==='factures'||id==='grandlivre')&&!get('mentionsLegalesAcceptees',false)){show('⚠️ Acceptez d’abord les mentions légales pour accéder à cette fonction.');return;}return bsOriginalGo(id)};
+function bsLegal(){if(get('mentionsLegalesAcceptees',false))return;let ok=confirm('AVANT D’UTILISER BOUTIK SAFE\\n\\nLes factures générées sont un support de gestion interne et ne remplacent pas une facture normalisée conforme aux règles fiscales en vigueur, notamment la certification e-MECeF lorsqu’elle est requise.\\n\\nLe journal des opérations et le Grand Livre sont des outils de gestion/préparation comptable et ne dispensent pas de la vérification par un expert-comptable ou professionnel qualifié.\\n\\nBoutik Safe décline toute responsabilité en cas d’erreur résultant d’une saisie incorrecte, d’un mauvais paramétrage ou d’un usage non conforme aux obligations légales.\\n\\nCliquez sur OK pour accepter. Annuler = accès aux fonctions sensibles limité.');set('mentionsLegalesAcceptees',!!ok);if(!ok)show('Les fonctions Factures et Grand Livre restent verrouillées tant que les conditions ne sont pas acceptées.')}
+async function bsBoot(){bsLegal();if(!bsClient){document.getElementById('authScreen').classList.remove('hidden');return}try{let saved=JSON.parse(localStorage.getItem('bs_auth_session')||'null');if(saved?.access_token&&saved?.refresh_token){try{await bsClient.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token})}catch(e){console.warn('Restauration session:',e.message)}}let {data:{session}}=await bsClient.auth.getSession();if(session){await bsAfterAuth(session);return}if(get('bsOfflineMode',false)){document.getElementById('authScreen').classList.add('hidden');return}document.getElementById('authScreen').classList.remove('hidden')}catch(e){console.warn('Initialisation compte:',e);document.getElementById('authScreen').classList.remove('hidden')}}
+if(bsClient)bsClient.auth.onAuthStateChange((_e,s)=>{if(s&&!bsUser)bsAfterAuth(s)});
+setTimeout(bsBoot,500);setInterval(()=>{if(bsCloudReady)bsSync()},45000);
+</script>\n</body></html>
