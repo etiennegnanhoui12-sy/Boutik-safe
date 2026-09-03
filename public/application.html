@@ -63,28 +63,32 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <div id="authScreen" class="auth-screen">
   <div class="auth-card">
     <div class="auth-logo">🏪</div><h2>Bienvenue dans Boutik Safe</h2>
-    <p class="auth-sub">Connectez-vous à votre compte pour retrouver vos données, votre historique et votre abonnement Premium sur n’importe quel appareil.</p>
+    <p class="auth-sub">La solution de gestion pensée pour les commerçants africains. Connectez-vous pour accéder à vos données, votre historique de ventes et votre abonnement Premium, en toute sécurité et sur n'importe quel appareil.</p>
     <div class="auth-tabs"><button id="tabLogin" class="on" onclick="authMode('login')">Se connecter</button><button id="tabSignup" onclick="authMode('signup')">Créer un compte</button></div>
     <div id="authError" class="auth-error"></div><div id="authMsg" class="auth-msg"></div>
     <div id="authLoginForm">
-      <label>📱 Numéro de téléphone (10 chiffres)</label><input id="authPhone" type="tel" inputmode="tel" autocomplete="username" placeholder="Ex : 01 97 00 00 00">
+      <label>📧 Adresse e-mail</label><input id="authEmail" type="email" inputmode="email" autocomplete="username" placeholder="exemple@email.com">
       <label>🔐 Mot de passe</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Votre mot de passe">
       <button class="btn vert" onclick="connexionCompte()">🔓 Se connecter</button>
       <button class="auth-link" style="display:block;margin:12px auto 0" onclick="afficherRecuperation()">Mot de passe oublié ?</button>
     </div>
     <div id="authSignupForm" style="display:none">
-      <label>📱 Numéro de téléphone (01 XX XX XX XX)</label><input id="newPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ex : 01 97 00 00 00">
+      <label>📧 Adresse e-mail</label><input id="newEmail" type="email" autocomplete="email" placeholder="exemple@email.com">
       <label>🔐 Créez un mot de passe</label><input id="newPassword" type="password" autocomplete="new-password" placeholder="8 caractères minimum">
-      <label>📧 E-mail de récupération <span class="muted">(facultatif)</span></label><input id="newEmail" type="email" autocomplete="email" placeholder="facultatif">
       <label>🏪 Nom du commerce</label><input id="newShop" placeholder="Ex : Boutique Chez Rachel">
       <button class="btn vert" onclick="creerCompte()">✅ Créer mon compte</button>
-      <div class="auth-small">Un code de récupération pourra être conservé pour les cas où vous n'avez plus accès à votre e-mail.</div>
+      <div class="auth-small">Votre e-mail sert d'identifiant de connexion et permet de récupérer votre compte en cas d'oubli du mot de passe.</div>
     </div>
     <div id="authRecoveryForm" style="display:none">
-      <h3 style="margin-bottom:4px">🔑 Récupérer mon compte</h3><p class="auth-sub">La connexion se fait avec votre numéro béninois et votre mot de passe. L’e-mail et le code de récupération servent à préparer la récupération du compte.</p>
+      <h3 style="margin-bottom:4px">🔑 Récupérer mon compte</h3><p class="auth-sub">Renseignez l'adresse e-mail associée à votre compte. Un lien de réinitialisation du mot de passe vous sera envoyé.</p>
       <label>📧 E-mail de récupération</label><input id="recoveryEmail" type="email" placeholder="Votre e-mail">
       <button class="btn vert" onclick="envoyerRecuperation()">📨 Envoyer la récupération</button>
       <button class="btn outline" onclick="authMode('login')">← Retour à la connexion</button>
+    </div>
+    <div id="authNewPasswordForm" style="display:none">
+      <h3 style="margin-bottom:4px">🔐 Nouveau mot de passe</h3><p class="auth-sub">Choisissez un nouveau mot de passe pour votre compte.</p>
+      <label>🔐 Nouveau mot de passe</label><input id="newPasswordRecup" type="password" autocomplete="new-password" placeholder="8 caractères minimum">
+      <button class="btn vert" onclick="definirNouveauMotDePasse()">✅ Valider le nouveau mot de passe</button>
     </div>
     <div class="auth-device">Code appareil : <b id="authDeviceCode">—</b></div>
     <p class="auth-small">Développé par <b>Etienne GNANHOUI</b></p>
@@ -822,49 +826,81 @@ function authMode(mode){
   document.getElementById('authLoginForm').style.display=mode==='login'?'block':'none';
   document.getElementById('authSignupForm').style.display=mode==='signup'?'block':'none';
   document.getElementById('authRecoveryForm').style.display='none';
+  document.getElementById('authNewPasswordForm').style.display='none';
   document.getElementById('tabLogin').classList.toggle('on',mode==='login');
   document.getElementById('tabSignup').classList.toggle('on',mode==='signup');
   authClear();
 }
+function bsParseHashParams(){
+  let h=location.hash.startsWith('#')?location.hash.slice(1):location.hash,params={};
+  h.split('&').forEach(pair=>{if(!pair)return;let[k,v]=pair.split('=');params[decodeURIComponent(k)]=decodeURIComponent((v||'').replace(/\+/g,' '))});
+  return params;
+}
+let bsRecoveryParams=bsParseHashParams();
+function bsCheckRecoveryLink(){
+  if(bsRecoveryParams.error){
+    document.getElementById('authScreen').classList.remove('hidden');
+    authMode('login');
+    authMessage('❌ '+(bsRecoveryParams.error_description||'Lien de récupération invalide ou expiré. Redemande un e-mail.'),true);
+    history.replaceState(null,'',location.pathname+location.search);
+    return true;
+  }
+  if(bsRecoveryParams.type==='recovery'&&bsRecoveryParams.access_token){
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('authLoginForm').style.display='none';
+    document.getElementById('authSignupForm').style.display='none';
+    document.getElementById('authRecoveryForm').style.display='none';
+    document.getElementById('authNewPasswordForm').style.display='block';
+    document.getElementById('tabLogin').classList.remove('on');
+    document.getElementById('tabSignup').classList.remove('on');
+    return true;
+  }
+  return false;
+}
+async function definirNouveauMotDePasse(){
+  authClear();
+  let pass=newPasswordRecup.value;
+  if(pass.length<8)return authMessage('❌ Le mot de passe doit contenir au moins 8 caractères.',true);
+  try{
+    let r=await fetch(SUPABASE_URL_V2+'/auth/v1/user',{method:'PUT',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY_V2,'Authorization':'Bearer '+bsRecoveryParams.access_token},body:JSON.stringify({password:pass})});
+    let j={};try{j=await r.json()}catch{}
+    if(!r.ok)throw new Error(j.error_description||j.msg||j.message||'Erreur Supabase');
+    history.replaceState(null,'',location.pathname+location.search);
+    document.getElementById('authNewPasswordForm').style.display='none';
+    authMode('login');
+    authMessage('✅ Mot de passe mis à jour. Connecte-toi avec ton nouveau mot de passe.');
+  }catch(e){
+    authMessage('❌ '+e.message,true);
+  }
+}
 function authClear(){['authError','authMsg'].forEach(id=>{let e=document.getElementById(id);e.style.display='none';e.textContent=''})}
 function authMessage(text,error=false){let id=error?'authError':'authMsg';let e=document.getElementById(id);e.textContent=text;e.style.display='block';}
-function normalizePhone(v){
-  let x=String(v||'').replace(/\D/g,'');
-  if(x.startsWith('00229')) x=x.slice(5);
-  if(x.startsWith('229')) x=x.slice(3);
-  if(x.length===8) x='01'+x;
-  if(x.length===10 && x.startsWith('01')) return '+229'+x;
-  return x?('+'+x):'';
-}
 function authHeaders(){return {'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY_V2,'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY_V2}}
 async function supa(path,body,token){let h=authHeaders();if(token)h.Authorization='Bearer '+token;let r=await fetch(SUPABASE_URL_V2+path,{method:'POST',headers:h,body:JSON.stringify(body)});let j={};try{j=await r.json()}catch{}if(!r.ok)throw new Error(j.error_description||j.msg||j.message||'Erreur Supabase');return j}
-function codeRecup(){let chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',a='';for(let i=0;i<12;i++)a+=chars[Math.floor(Math.random()*chars.length)];return a.slice(0,4)+'-'+a.slice(4,8)+'-'+a.slice(8)}
 async function creerCompte(){
   authClear();
-  let phone=normalizePhone(newPhone.value),password=newPassword.value,
-      email=newEmail.value.trim(),shop=newShop.value.trim(),code=codeRecup();
+  let email=newEmail.value.trim(),password=newPassword.value,
+      shop=newShop.value.trim();
 
-  if(!/^\+22901\d{8}$/.test(phone))
-    return authMessage('❌ Numéro béninois invalide. Utilise le format 01 XX XX XX XX.',true);
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return authMessage('❌ Adresse e-mail invalide.',true);
   if(password.length<8)
     return authMessage('❌ Le mot de passe doit contenir au moins 8 caractères.',true);
   if(!shop)
     return authMessage('❌ Indique le nom du commerce.',true);
 
   try{
-    // Téléphone = identité Supabase. L'e-mail facultatif est conservé
-    // dans les métadonnées et n'est PAS envoyé comme champ "email".
+    // E-mail = identité Supabase.
     let metadata={
-      nom_commerce:shop,
-      email_recuperation:email||null,
-      code_recuperation:code
+      nom_commerce:shop
     };
-    let j=await supa('/auth/v1/signup',{phone,password,data:metadata});
+    let j=await supa('/auth/v1/signup',{email,password,data:metadata});
 
     authMessage(j.session
       ? '✅ Compte créé et connecté.'
-      : '✅ Compte créé. Connecte-toi avec ton numéro 01XXXXXXXX et ton mot de passe.'
+      : '✅ Compte créé. Connecte-toi avec ton e-mail et ton mot de passe.'
     );
+
 
     if(j.session){
       bsSession=j.session;
@@ -876,11 +912,11 @@ async function creerCompte(){
   }
 }
 async function connexionCompte(){
- authClear();let phone=normalizePhone(authPhone.value),password=authPassword.value;if(!/^\+22901\d{8}$/.test(phone))return authMessage('❌ Numéro béninois invalide. Utilise le format 01 XX XX XX XX.',true);if(!password)return authMessage('❌ Entre ton mot de passe.',true);
- try{let j=await supa('/auth/v1/token?grant_type=password',{phone,password});bsSession=j;localStorage.setItem('bs_auth_session',JSON.stringify(j));if(typeof bsClient!=='undefined'&&bsClient&&j.access_token&&j.refresh_token){try{await bsClient.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token})}catch(e){console.warn(e)}}if(typeof bsAfterAuth==='function'&&j.user){await bsAfterAuth(j)}else{ouvrirApplicationApresConnexion();}}
- catch(e){authMessage('❌ Numéro ou mot de passe incorrect.',true)}
+ authClear();let email=authEmail.value.trim(),password=authPassword.value;if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return authMessage('❌ Adresse e-mail invalide.',true);if(!password)return authMessage('❌ Entre ton mot de passe.',true);
+ try{let j=await supa('/auth/v1/token?grant_type=password',{email,password});bsSession=j;localStorage.setItem('bs_auth_session',JSON.stringify(j));if(typeof bsClient!=='undefined'&&bsClient&&j.access_token&&j.refresh_token){try{await bsClient.auth.setSession({access_token:j.access_token,refresh_token:j.refresh_token})}catch(e){console.warn(e)}}if(typeof bsAfterAuth==='function'&&j.user){await bsAfterAuth(j)}else{ouvrirApplicationApresConnexion();}}
+ catch(e){authMessage('❌ '+(e.message||'E-mail ou mot de passe incorrect.'),true)}
 }
-function afficherRecuperation(){document.getElementById('authLoginForm').style.display='none';document.getElementById('authSignupForm').style.display='none';document.getElementById('authRecoveryForm').style.display='block';document.getElementById('tabLogin').classList.remove('on');document.getElementById('tabSignup').classList.remove('on');authClear()}
+function afficherRecuperation(){document.getElementById('authLoginForm').style.display='none';document.getElementById('authSignupForm').style.display='none';document.getElementById('authRecoveryForm').style.display='block';document.getElementById('authNewPasswordForm').style.display='none';document.getElementById('tabLogin').classList.remove('on');document.getElementById('tabSignup').classList.remove('on');authClear()}
 async function envoyerRecuperation(){
  authClear();let email=recoveryEmail.value.trim();if(!email)return authMessage('❌ Entre ton e-mail de récupération.',true);
  try{await fetch(SUPABASE_URL_V2+'/auth/v1/recover',{method:'POST',headers:authHeaders(),body:JSON.stringify({email})});authMessage('📨 Si cette adresse est associée à un compte, un message de récupération a été envoyé.');}
@@ -908,22 +944,14 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-\n<script>
+<script>
 /* === BoutikSafe V2 : compte, synchronisation, Premium lié au compte, journal de l'entité === */
 const BS_SUPABASE_URL='https://jgjcgsuahowjmtroxxuc.supabase.co';
 const BS_SUPABASE_KEY='sb_publishable_WXw98qovz8EUplNcbmEg1w_rwL6q_yE';
 let bsClient=null,bsUser=null,bsSession=null,bsCloudReady=false,bsSyncBusy=false;
 try{if(window.supabase?.createClient)bsClient=window.supabase.createClient(BS_SUPABASE_URL,BS_SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true}})}catch(e){console.warn(e)}
-const bsNormPhone=p=>{p=String(p||'').replace(/[^0-9+]/g,'');if(p.startsWith('00'))p='+'+p.slice(2);if(!p.startsWith('+')&&p.startsWith('229'))p='+'+p;return p};
-const bsMsg=t=>{const el=document.getElementById('bsAuthMsg');if(el)el.textContent=t||''};
-function bsShowSignup(){document.getElementById('bsAuthTitle').textContent='Créer votre compte';document.getElementById('bsAuthIntro').textContent='Le numéro de téléphone identifie votre compte. L’e-mail reste facultatif et sert à la récupération.';document.getElementById('bsEmailLabel').style.display='block';document.getElementById('bsEmail').style.display='block';document.getElementById('bsNameLabel').style.display='block';document.getElementById('bsName').style.display='block';document.querySelector('#bsAuthForm .btn.vert').textContent='Créer mon compte';document.querySelector('#bsAuthForm .btn.vert').onclick=bsSignup;document.querySelector('#bsAuthForm .btn.outline').textContent='J’ai déjà un compte';document.querySelector('#bsAuthForm .btn.outline').onclick=bsResetLogin;bsMsg('');}
-function bsResetLogin(){location.reload()}
-async function bsSignup(){if(!bsClient)return bsMsg('Connexion cloud indisponible. Vous pouvez continuer hors connexion.');let phone=bsNormPhone(bsPhone.value),pass=bsPassword.value.trim(),email=bsEmail.value.trim()||null,name=bsName.value.trim()||'Boutik Safe';if(!phone||pass.length<6)return bsMsg('Entrez un numéro et un mot de passe d’au moins 6 caractères.');bsMsg('Création du compte…');let payload={phone,password:pass,options:{data:{nom_commerce:name,email_recuperation:email}}};let {data,error}=await bsClient.auth.signUp(payload);if(error)return bsMsg('❌ '+error.message);if(!data.session)return bsMsg('Compte créé. Selon la configuration Supabase, une vérification peut être demandée.');bsAfterAuth(data.session);}
-async function bsLogin(){if(!bsClient)return bsMsg('Connexion cloud indisponible.');let phone=bsNormPhone(bsPhone.value),pass=bsPassword.value;if(!phone||!pass)return bsMsg('Entrez votre numéro et votre mot de passe.');bsMsg('Connexion…');let {data,error}=await bsClient.auth.signInWithPassword({phone,password:pass});if(error)return bsMsg('❌ Numéro ou mot de passe incorrect.');bsAfterAuth(data.session);}
-async function bsForgotPassword(){if(!bsClient)return bsMsg('Pour une récupération automatique, ajoutez un e-mail de récupération dans votre compte.');let email=prompt('Entrez votre e-mail de récupération :');if(!email)return;let {error}=await bsClient.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});bsMsg(error?'❌ '+error.message:'📧 Si cet e-mail est associé au compte, un message de récupération a été envoyé.');}
-function bsUseOffline(){document.getElementById('authScreen').classList.add('hidden');set('bsOfflineMode',true);show('Mode hors connexion activé — les données restent sur cet appareil.');}
-async function bsAfterAuth(session){bsSession=session;bsUser=session.user;bsCloudReady=true;set('bsUserId',bsUser.id);set('bsPhone',bsUser.phone||'');document.getElementById('authScreen').classList.add('hidden');set('bsOfflineMode',false);await bsEnsureProfile();await bsPullPremium();let cloudHasData=await bsPull();if(!cloudHasData&&bsLocalHasData())await bsSync();bsUpdateAccountUI();rendreHistorique();}
-async function bsEnsureProfile(){if(!bsClient||!bsUser)return;let name=bsUser.user_metadata?.nom_commerce||config.nom||'Boutik Safe';await bsClient.from('profiles').upsert({id:bsUser.id,phone:bsUser.phone||null,nom_commerce:name},{onConflict:'id'});}
+async function bsAfterAuth(session){bsSession=session;bsUser=session.user;bsCloudReady=true;set('bsUserId',bsUser.id);set('bsEmail',bsUser.email||'');document.getElementById('authScreen').classList.add('hidden');set('bsOfflineMode',false);await bsEnsureProfile();await bsPullPremium();let cloudHasData=await bsPull();if(!cloudHasData&&bsLocalHasData())await bsSync();bsUpdateAccountUI();rendreHistorique();}
+async function bsEnsureProfile(){if(!bsClient||!bsUser)return;let name=bsUser.user_metadata?.nom_commerce||config.nom||'Boutik Safe';await bsClient.from('profiles').upsert({id:bsUser.id,email:bsUser.email||null,nom_commerce:name},{onConflict:'id'});}
 async function bsPullPremium(){if(!bsClient||!bsUser)return;let {data,error}=await bsClient.from('subscriptions').select('plan,status,expires_at').eq('user_id',bsUser.id).eq('status','active').order('expires_at',{ascending:false}).limit(1);if(!error&&data?.[0]){let until=new Date(data[0].expires_at).getTime();set('cloudPremiumUntil',until);premiumUntil=until;}}
 function bsPremiumState(){let e=Number(essai)||Date.now();let trial=Date.now()<e+14*86400000;let cloud=Number(get('cloudPremiumUntil',0))>Date.now();let local=Number(premiumUntil||0)>Date.now();return{actif:trial||cloud||local,essaiOk:trial,premiumActif:cloud||local,joursRestants:Math.max(0,Math.ceil((e+14*86400000-Date.now())/86400000))};}
 window.bsOriginalCalculPremium=window.calculPremium;window.calculPremium=bsPremiumState;
@@ -937,8 +965,8 @@ function bsLocalHasData(){return produits.length>0||ventes.length>0||credits.len
 function bsUuidFromString(str){let h1=0x811c9dc5,h2=0x9e3779b9,h3=0x85ebca6b,h4=0xc2b2ae35;for(let i=0;i<str.length;i++){let c=str.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,2246822507);h3=Math.imul(h3^c,3266489909);h4=Math.imul(h4^c,668265263)}let hex=[h1,h2,h3,h4].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');return hex.slice(0,8)+'-'+hex.slice(8,12)+'-4'+hex.slice(13,16)+'-8'+hex.slice(17,20)+'-'+hex.slice(20,32);}
 async function bsPull(){if(!bsClient||!bsUser)return false;try{const [pr,vr]=await Promise.all([bsClient.from('produits').select('*').eq('user_id',bsUser.id),bsClient.from('ventes').select('*').eq('user_id',bsUser.id)]);if(pr.error)console.warn('pull produits',pr.error.message);if(vr.error)console.warn('pull ventes',vr.error.message);const cloudProducts=pr.data||[],cloudSales=vr.data||[];const cloudHasData=cloudProducts.length>0||cloudSales.length>0;if(!cloudHasData){rendreVente();rendreHistorique();return false;}if(cloudProducts.length){produits=cloudProducts.map(p=>({id:p.id,nom:p.nom,prix:Number(p.prix)||0,achat:Number(p.achat)||0,stock:Number(p.stock)||0,codeBarre:p.code_barre||'',emoji:p.emoji||'📦',photo:p.photo||'',peremption:p.peremption||''}));set('produits',produits)}else{produits=[];set('produits',produits)}if(cloudSales.length){const {data:ls,error:le}=await bsClient.from('ventes_lignes').select('*').eq('user_id',bsUser.id);if(le)console.warn('pull ventes_lignes',le.message);const lignes=ls||[];ventes=cloudSales.map(v=>({id:v.id,date:v.date,total:Number(v.total)||0,articles:lignes.filter(l=>l.vente_id===v.id).map(l=>({nom:l.produit_nom,quantite:Number(l.quantite)||0,prix:Number(l.prix)||0,achat:Number(l.achat)||0}))}));set('ventes',ventes)}else{ventes=[];set('ventes',ventes)}rendreVente();rafraichir();rendreHistorique();return true}catch(e){console.warn('pull cloud',e);return false;}}
 window.bsSync=async()=>{if(bsCloudReady){await bsSync();}};
-function bsUpdateAccountUI(){let el=document.getElementById('cloudAccountStatus');if(el)el.innerHTML=bsUser?'<span class="bs-account-badge">✓ '+(bsUser.phone||'Compte connecté')+'</span>':'Compte non connecté';}
-function ouvrirCompteCloud(){if(!bsUser){document.getElementById('authScreen').classList.remove('hidden');return}show('Compte connecté : '+(bsUser.phone||''));}
+function bsUpdateAccountUI(){let el=document.getElementById('cloudAccountStatus');if(el)el.innerHTML=bsUser?'<span class="bs-account-badge">✓ '+(bsUser.email||'Compte connecté')+'</span>':'Compte non connecté';}
+function ouvrirCompteCloud(){if(!bsUser){document.getElementById('authScreen').classList.remove('hidden');return}show('Compte connecté : '+(bsUser.email||''));}
 async function deconnecterCompteCloud(){if(bsClient)await bsClient.auth.signOut();bsUser=null;bsSession=null;bsCloudReady=false;localStorage.removeItem('bsUserId');document.getElementById('authScreen').classList.remove('hidden');}
 function ajouterTiers(){let nom=prompt('Nom du client, fournisseur ou autre tiers :');if(!nom)return;let type=prompt('Type : client / fournisseur / autre','client')||'autre';let tiers=get('tiersBoutik',[]);tiers.push({id:bsUuid(),nom,type,created_at:new Date().toISOString()});set('tiersBoutik',tiers);rendreGrandLivre();}
 function rendreGrandLivre(){let tiers=get('tiersBoutik',[]);document.getElementById('tiersListe').innerHTML=tiers.length?tiers.map(t=>`<div class="ligne"><div class="infos"><b>${t.nom}</b><div class="muted">${t.type}</div></div></div>`).join(''):'<p class="muted">Aucun sous-compte de tiers. Ajoutez un client, fournisseur ou autre tiers.</p>';genererGrandLivre();}
@@ -947,8 +975,9 @@ function genererGrandLivre(){let rows=[];ventes.forEach(v=>(v.articles||[]).forE
 function rendrePremium(){let st=bsPremiumState();statutPremium.innerHTML=st.actif?`<b class="success">⭐ Accès actif</b><div class="muted">${st.premiumActif?'Premium compte actif':'Essai gratuit — '+st.joursRestants+' jour(s)'}</div>`:`<b class="danger">Premium/essai expiré</b>`;codeAppareil.textContent=device}
 const bsOriginalGo=window.go;
 window.go=function(id){if((id==='factures'||id==='grandlivre')&&!get('mentionsLegalesAcceptees',false)){show('⚠️ Acceptez d’abord les mentions légales pour accéder à cette fonction.');return;}return bsOriginalGo(id)};
-function bsLegal(){if(get('mentionsLegalesAcceptees',false))return;let ok=confirm('AVANT D’UTILISER BOUTIK SAFE\\n\\nLes factures générées sont un support de gestion interne et ne remplacent pas une facture normalisée conforme aux règles fiscales en vigueur, notamment la certification e-MECeF lorsqu’elle est requise.\\n\\nLe journal des opérations et le Grand Livre sont des outils de gestion/préparation comptable et ne dispensent pas de la vérification par un expert-comptable ou professionnel qualifié.\\n\\nBoutik Safe décline toute responsabilité en cas d’erreur résultant d’une saisie incorrecte, d’un mauvais paramétrage ou d’un usage non conforme aux obligations légales.\\n\\nCliquez sur OK pour accepter. Annuler = accès aux fonctions sensibles limité.');set('mentionsLegalesAcceptees',!!ok);if(!ok)show('Les fonctions Factures et Grand Livre restent verrouillées tant que les conditions ne sont pas acceptées.')}
-async function bsBoot(){bsLegal();if(!bsClient){document.getElementById('authScreen').classList.remove('hidden');return}try{let saved=JSON.parse(localStorage.getItem('bs_auth_session')||'null');if(saved?.access_token&&saved?.refresh_token){try{await bsClient.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token})}catch(e){console.warn('Restauration session:',e.message)}}let {data:{session}}=await bsClient.auth.getSession();if(session){await bsAfterAuth(session);return}if(get('bsOfflineMode',false)){document.getElementById('authScreen').classList.add('hidden');return}document.getElementById('authScreen').classList.remove('hidden')}catch(e){console.warn('Initialisation compte:',e);document.getElementById('authScreen').classList.remove('hidden')}}
+function bsLegal(){if(get('mentionsLegalesAcceptees',false))return;let ok=confirm('AVANT D’UTILISER BOUTIK SAFE\n\nLes factures générées sont un support de gestion interne et ne remplacent pas une facture normalisée conforme aux règles fiscales en vigueur, notamment la certification e-MECeF lorsqu’elle est requise.\n\nLe journal des opérations et le Grand Livre sont des outils de gestion/préparation comptable et ne dispensent pas de la vérification par un expert-comptable ou professionnel qualifié.\n\nBoutik Safe décline toute responsabilité en cas d’erreur résultant d’une saisie incorrecte, d’un mauvais paramétrage ou d’un usage non conforme aux obligations légales.\n\nCliquez sur OK pour accepter. Annuler = accès aux fonctions sensibles limité.');set('mentionsLegalesAcceptees',!!ok);if(!ok)show('Les fonctions Factures et Grand Livre restent verrouillées tant que les conditions ne sont pas acceptées.')}
+async function bsBoot(){bsLegal();if(bsCheckRecoveryLink())return;if(!bsClient){document.getElementById('authScreen').classList.remove('hidden');return}try{let saved=JSON.parse(localStorage.getItem('bs_auth_session')||'null');if(saved?.access_token&&saved?.refresh_token){try{await bsClient.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token})}catch(e){console.warn('Restauration session:',e.message)}}let {data:{session}}=await bsClient.auth.getSession();if(session){await bsAfterAuth(session);return}if(get('bsOfflineMode',false)){document.getElementById('authScreen').classList.add('hidden');return}document.getElementById('authScreen').classList.remove('hidden')}catch(e){console.warn('Initialisation compte:',e);document.getElementById('authScreen').classList.remove('hidden')}}
 if(bsClient)bsClient.auth.onAuthStateChange((_e,s)=>{if(s&&!bsUser)bsAfterAuth(s)});
 setTimeout(bsBoot,500);setInterval(()=>{if(bsCloudReady)bsSync()},45000);
-</script>\n</body></html>
+</script>
+</body></html>
