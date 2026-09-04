@@ -94,6 +94,18 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
     <p class="auth-small">Développé par <b>Etienne GNANHOUI</b></p>
   </div>
 </div>
+<div id="operateurScreen" class="auth-screen hidden">
+  <div class="auth-card">
+    <div class="auth-logo">🧑‍🤝‍🧑</div><h2>Qui utilise l'app ?</h2>
+    <p class="auth-sub">Sélectionne ton profil pour continuer.</p>
+    <div id="listeOperateurs" style="margin-top:14px"></div>
+  </div>
+</div>
+<div id="m-pin-operateur" class="modal"><div class="box"><button class="close" onclick="fermer('m-pin-operateur')">✕</button><h2 id="pinOperateurTitre">Code PIN</h2>
+<label>Code PIN (4 chiffres)</label><input id="pinOperateurSaisie" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="••••">
+<div id="pinOperateurErreur" class="danger" style="display:none;margin:6px 0;font-weight:800"></div>
+<button class="btn vert" onclick="validerPinOperateur()">✅ Valider</button>
+</div></div>
 <header>
 <div style="display:flex;align-items:center;gap:4px"><button id="btnRetour" onclick="go('menu')">←</button><h1 id="titreApp">🏪 Boutik Safe</h1></div>
 <div class="row" style="max-width:220px"><button id="badgeAlerte" class="btn rouge" style="display:none;margin:0;padding:7px" onclick="go('stock')">⚠️</button><button id="badgePremium" class="btn jaune" style="display:none;margin:0;padding:7px" onclick="go('premium')">⭐</button></div>
@@ -127,6 +139,7 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <section id="e-menu" class="ecran">
 <h2>☰ Menu</h2>
 <div id="bandeauEssai" class="carte" style="display:none"></div>
+<button class="btn outline" style="margin-bottom:12px" onclick="afficherChoixOperateur()">🔄 Changer d'opérateur (<span id="operateurActifNom"></span>)</button>
 <div class="menu-grid">
   <div class="menu-tile" onclick="go('credit')"><span class="ico">💳</span><span class="lbl">Crédit</span><span class="badge" id="badgeCredit" style="display:none"></span></div>
   <div class="menu-tile" onclick="go('factures')"><span class="ico">🧾</span><span class="lbl">Factures</span></div>
@@ -225,6 +238,7 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <div class="carte"><b>PIN de gestion</b><p class="muted">Le PIN protège le stock, la caisse, les fournisseurs et les paramètres.</p><button class="btn jaune" onclick="changerPin()">🔐 Modifier PIN / mot secret</button><button class="btn outline" onclick="testerNotification()">🔔 Tester notification</button></div>
 <div class="carte"><b>👤 Compte BoutikSafe</b><p id="cloudAccountStatus" class="muted">Compte non connecté</p><button class="btn outline" onclick="ouvrirCompteCloud()">🔐 Gérer mon compte</button><button class="btn gris" onclick="deconnecterCompteCloud()">Se déconnecter</button></div>
 <div class="carte"><b>Apparence</b><button class="btn gris" onclick="basculerTheme()">🌙 Mode sombre / clair</button></div>
+<div class="carte" id="carteIntervenants"><b>👥 Intervenants (vendeurs, gérants)</b><p class="muted" style="margin:4px 0 8px">Ajoute les personnes qui utilisent l'application avec toi. Chacune a un code PIN à 4 chiffres et un accès limité selon son rôle. Seul toi, en tant que Patron, peux les gérer et réinitialiser un PIN oublié.</p><div id="listeIntervenants"></div><button class="btn vert" onclick="ouvrirIntervenant()">➕ Ajouter un intervenant</button></div>
 </section>
 
 <nav>
@@ -234,8 +248,15 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <button data-go="menu" onclick="go('menu')"><span class="ico">☰</span>Menu</button>
 </nav>
 
+<div id="m-intervenant" class="modal"><div class="box"><button class="close" onclick="fermer('m-intervenant')">✕</button><h2 id="intervenantTitre">Intervenant</h2>
+<label>Nom</label><input id="ivNom">
+<label>Rôle</label><select id="ivRole"><option value="gerant">Gérant</option><option value="vendeur">Vendeur / Caissier</option></select>
+<label>Code PIN (4 chiffres)</label><input id="ivPin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="••••">
+<button class="btn vert" onclick="sauverIntervenant()">💾 Enregistrer</button>
+<button class="btn danger" id="supIntervenant" style="display:none" onclick="supprimerIntervenant()">🗑️ Supprimer</button>
+</div></div>
 <div id="m-produit" class="modal"><div class="box"><button class="close" onclick="fermer('m-produit')">✕</button><h2 id="prodTitre">Produit</h2>
-<label>Nom</label><input id="pNom"><label>Prix de vente (F)</label><input id="pPrix" type="number" step="0.01"><label>Prix d'achat (F)</label><input id="pAchat" type="number" step="0.01"><label>Stock</label><input id="pStock" type="number" step="0.01"><label>Code-barres</label><div class="row"><input id="pCode"><button class="btn gris" style="max-width:70px" onclick="scanCode('produit')">📷</button></div><label>Péremption</label><input id="pPer" type="date"><label>Photo du produit</label><input id="pPhoto" type="file" accept="image/*" capture="environment">
+<label>Nom</label><input id="pNom"><label>Prix de vente (F)</label><input id="pPrix" type="number" step="0.01"><span id="pAchatWrap"><label>Prix d'achat (F)</label><input id="pAchat" type="number" step="0.01"></span><label>Stock</label><input id="pStock" type="number" step="0.01"><label>Code-barres</label><div class="row"><input id="pCode"><button class="btn gris" style="max-width:70px" onclick="scanCode('produit')">📷</button></div><label>Péremption</label><input id="pPer" type="date"><label>Photo du produit</label><input id="pPhoto" type="file" accept="image/*" capture="environment">
 <div id="photoApercu" class="muted" style="margin-top:6px">Aucune photo</div>
 <button class="btn outline" type="button" onclick="supprimerPhotoProduit()">🗑️ Retirer la photo</button>
 <label>Emoji (utilisé si aucune photo, perso ou par défaut, n'est disponible)</label><input id="pEmoji" placeholder="Auto (basé sur le nom) ou saisis le tien"><button class="btn vert" onclick="sauverProduit()">💾 Enregistrer</button><button id="supProd" class="btn rouge" onclick="supprimerProduit()">🗑️ Supprimer</button></div></div>
@@ -272,7 +293,7 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 
 <script>
 const SUPPORT="2290163495733", SECRET_SUPPORT="JESUS4312", DEPOT="0163495733", PAIEMENT_MOOV="0163495733", PAIEMENT_MTN="0191283141", PAIEMENT_CELTIS="0140791729";
-const INIT=[{id:"p1",nom:"Lait en poudre",prix:1500,achat:1000,stock:12,codeBarre:"",emoji:"🥛",peremption:""},{id:"p2",nom:"Pain",prix:250,achat:150,stock:3,codeBarre:"",emoji:"🍞",peremption:""},{id:"p3",nom:"Savon",prix:500,achat:300,stock:20,codeBarre:"",emoji:"🧼",peremption:""},{id:"p4",nom:"Riz (kg)",prix:700,achat:550,stock:8,codeBarre:"",emoji:"🍚",peremption:""}];
+const INIT=[];
 const get=(k,d)=>{try{let x=localStorage.getItem(k);return x===null?d:JSON.parse(x)}catch{return d}};
 const set=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 let produits=get("produits",null)||INIT;if(!get("produits",null))set("produits",produits);produits=produits.map(p=>({...p,emoji:p.emoji||"📦",photo:p.photo||""}));
@@ -488,6 +509,7 @@ function ouvrirProduit(id=null){
   majApercu();
   const f=document.getElementById("pPhoto");if(f)f.value="";
   supProd.style.display=p?"block":"none";modal("m-produit");
+  let wrap=document.getElementById("pAchatWrap");if(wrap)wrap.style.display=estPatron()?"block":"none";
   if(f)f.onchange=async()=>{photoProduitTemp=await chargerPhotoProduit(f.files[0]);majApercu()};
   if(pNom)pNom.oninput=()=>{
     if(emojiAutoActif){dernierAutoEmoji=emojiProduit(pNom.value);pEmoji.value=dernierAutoEmoji}
@@ -496,10 +518,13 @@ function ouvrirProduit(id=null){
   if(pEmoji)pEmoji.oninput=()=>{emojiAutoActif=(pEmoji.value===dernierAutoEmoji)};
 }
 function sauverProduit(){
- let nom=pNom.value.trim(),pv=Number(pPrix.value),pa=Number(pAchat.value),st=Number(pStock.value);if(!nom||!isFinite(pv)||!isFinite(pa)||!isFinite(st)||st<0)return show("⚠️ Vérifie les champs");
+ let nom=pNom.value.trim(),pv=Number(pPrix.value),st=Number(pStock.value);
+ let old=editId?produits.find(x=>x.id===editId):null;
+ let pa=estPatron()?Number(pAchat.value):(old?old.achat:0);
+ if(!nom||!isFinite(pv)||!isFinite(pa)||!isFinite(st)||st<0)return show("⚠️ Vérifie les champs");
  let emoji=(pEmoji.value||"").trim()||emojiProduit(nom);
   let data={nom,prix:pv,achat:pa,stock:st,codeBarre:pCode.value.trim(),peremption:pPer.value,emoji,photo:photoProduitTemp||""};
- if(editId){let old=produits.find(x=>x.id===editId);if(old&&old.achat!==pa){old.historiquePrix=old.historiquePrix||[];old.historiquePrix.push({date:today(),ancien:old.achat,nouveau:pa})}produits=produits.map(p=>p.id===editId?{...p,...data}:p)}
+ if(editId){if(old&&old.achat!==pa){old.historiquePrix=old.historiquePrix||[];old.historiquePrix.push({date:today(),ancien:old.achat,nouveau:pa})}produits=produits.map(p=>p.id===editId?{...p,...data}:p)}
  else produits.push({id:id(),...data,historiquePrix:[]});
  saveAll();fermer("m-produit");show("✅ Produit enregistré");rendreStock();rafraichir();
 }
@@ -535,7 +560,7 @@ function venteRapide(pid){panier={};panier[pid]=1;set("panierSauve",panier);vali
 function validerVente(){
  let arr=Object.entries(panier).filter(([i,q])=>q>0);if(!arr.length)return;let articles=arr.map(([i,q])=>{let p=produits.find(x=>x.id===i);return{produitId:i,nom:p.nom,quantite:Number(q),prix:p.prix,achat:p.achat}}),total=articles.reduce((s,a)=>s+a.prix*a.quantite,0);
  produits=produits.map(p=>{let q=Number(panier[p.id]||0);return q?{...p,stock:p.stock-q}:p});
- ventes.push({id:id(),date:new Date().toISOString(),articles,total});panier={};saveAll();show("✅ Vente enregistrée");rendreVente();
+ ventes.push({id:id(),date:new Date().toISOString(),articles,total,vendeurNom:nomOperateurActif()});panier={};saveAll();show("✅ Vente enregistrée");rendreVente();
  venteEnAttenteFacture={articles,total,date:new Date().toISOString()};
  document.getElementById("monnaieTotal").textContent=fmt(total);document.getElementById("montantRecu").value="";document.getElementById("resultatMonnaie").style.display="none";
  modal("m-monnaie",true);
@@ -670,11 +695,11 @@ let graph=null;
 function articlesVendusJour(vs){let m={};vs.forEach(v=>v.articles.forEach(a=>{m[a.nom]=(m[a.nom]||0)+a.quantite}));return Object.entries(m).sort((a,b)=>b[1]-a[1])}
 function produitsProchesPeremption(){let dans14j=Date.now()+14*86400000;return produits.filter(p=>{if(!p.peremption)return false;let d=new Date(p.peremption).getTime();return !isNaN(d)&&d<=dans14j}).sort((a,b)=>new Date(a.peremption)-new Date(b.peremption))}
 function calculPourDate(d){let vs=ventes.filter(v=>v.date.slice(0,10)===d),ca=vs.reduce((s,v)=>s+v.total,0),benef=vs.reduce((s,v)=>s+v.articles.reduce((z,a)=>z+(a.prix-a.achat)*a.quantite,0),0);return{vs,ca,benef}}
-function genererParagraphePourDate(d){let c=calculPourDate(d);let nomE=config.nom||"votre entreprise";let art=articlesVendusJour(c.vs);
+function genererParagraphePourDate(d,inclureBenefice=true){let c=calculPourDate(d);let nomE=config.nom||"votre entreprise";let art=articlesVendusJour(c.vs);
  // Bénéfice non affiché si le prix d'achat n'a pas été renseigné pour au moins un article vendu (donnée manquante)
  let achatManquant=c.vs.some(v=>v.articles.some(a=>!a.achat||a.achat<=0));
  let phrase1=`À ${nomE}, le ${d}, nous avons eu à effectuer ${c.vs.length} vente${c.vs.length>1?"s":""} pour un total de ${fmt(c.ca)}`;
- phrase1+=(!achatManquant&&c.vs.length)?`, réalisant un bénéfice net de ${fmt(c.benef)}.`:".";
+ phrase1+=(inclureBenefice&&!achatManquant&&c.vs.length)?`, réalisant un bénéfice net de ${fmt(c.benef)}.`:".";
  let phraseDetail=art.length?` Détail des articles vendus : ${art.map(([nom,q])=>nom+" ("+q+")").join(", ")}.`:" Aucun article n'a été vendu ce jour-là.";
  let phraseTop=art.length?` L'article le plus vendu est « ${art[0][0]} » avec ${art[0][1]} unité${art[0][1]>1?"s":""}.`:"";
  let peri=produitsProchesPeremption();let phrasePerimes="";
@@ -721,7 +746,7 @@ function verifierClotureJournaliere(){
     set("dernierJourVu",today());
   }
 }
-function envoyerRapport(){let par=document.getElementById("paragrapheRapport").textContent;let msg=`📊 Rapport ${config.nom} — ${today()}\n\n${par}\n\nRésultat net cumulé : ${fmt(resultatNet())}`;window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank")}
+function envoyerRapport(){let par=genererParagraphePourDate(today(),false).texte;let msg=`📊 Rapport ${config.nom} — ${today()}\n\n${par}`;window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank")}
 function rendreDashboard(){
  let c=calculJour(),top=ventes.flatMap(v=>v.articles).reduce((a,x)=>{a[x.nom]=(a[x.nom]||0)+x.quantite;return a},{});
  let tops=Object.entries(top).sort((a,b)=>b[1]-a[1]).slice(0,5);dashboardStats.innerHTML=`<div class="stat big"><small>CA total</small><div class="kpi">${fmt(ventes.reduce((s,v)=>s+v.total,0))}</div></div><div class="stat"><small>Profit</small><strong>${fmt(ventes.reduce((s,v)=>s+v.articles.reduce((z,a)=>z+(a.prix-a.achat)*a.quantite,0),0))}</strong></div><div class="stat"><small>Résultat net</small><strong>${fmt(resultatNet())}</strong></div><div class="stat"><small>Dettes fournisseurs</small><strong>${fmt(totalDettes())}</strong></div><div class="stat"><small>Dépenses</small><strong>${fmt(totalDepenses())}</strong></div>`;topProduits.innerHTML="<b>🏆 Top produits</b>"+(tops.length?tops.map((x,i)=>`<p>${i+1}. ${x[0]} — ${x[1]} unité(s)</p>`).join(""):"<p class='muted'>Aucune vente</p>");dashAlertes.innerHTML=produits.filter(p=>p.stock<=Number(config.seuil)).map(p=>`<div class="carte danger">⚠️ Stock faible : ${p.nom} (${p.stock})</div>`).join("")}
@@ -763,7 +788,7 @@ async function exporterFichier(nomFichier,buf,mime){
 async function exportExcel(){if(!window.ExcelJS)return show("Excel indisponible");let wb=new ExcelJS.Workbook(),ws=wb.addWorksheet("Ventes");ws.addRow(["Date","Produit","Quantité","Prix vente","Prix achat","Total","Profit"]);ventes.forEach(v=>v.articles.forEach(a=>ws.addRow([v.date.slice(0,10),a.nom,a.quantite,a.prix,a.achat,a.prix*a.quantite,(a.prix-a.achat)*a.quantite])));ajusterColonnes(ws);let wp=wb.addWorksheet("Produits");wp.addRow(["Produit","Vente","Achat","Stock","Code-barres","Emoji","Photo"]);produits.forEach(p=>wp.addRow([p.nom,p.prix,p.achat,p.stock,p.codeBarre,p.emoji,p.photo||""]));ajusterColonnes(wp);let wd=wb.addWorksheet("Dettes");wd.addRow(["Fournisseur","Montant","Statut","Date"]);dettes.forEach(d=>{let f=fournisseurs.find(x=>x.id===d.fournisseurId);wd.addRow([f?.nom||"",d.montant,d.paye?"Payé":"Impayé",d.date])});ajusterColonnes(wd);let buf=await wb.xlsx.writeBuffer();await exporterFichier((config.nom||"boutik_safe").replace(/[^a-z0-9]+/gi,"_")+"_export_"+today()+".xlsx",buf,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
 function exportPDF(){let {jsPDF}=window.jspdf;if(!jsPDF)return;let doc=new jsPDF(),c=calculJour();doc.text("Rapport complet — "+config.nom,14,15);doc.autoTable({startY:22,head:[["Indicateur","Valeur"]],body:[["CA du jour",fmt(c.ca)],["Bénéfice du jour",fmt(c.benef)],["Résultat net",fmt(resultatNet())],["Dettes fournisseurs",fmt(totalDettes())],["Dépenses",fmt(totalDepenses())],["Nombre de ventes",String(c.vs.length)]]});let y=doc.lastAutoTable.finalY+8;doc.autoTable({startY:y,head:[["Produit","Stock","Prix vente","Prix achat"]],body:produits.map(p=>[p.nom,p.stock,fmt(p.prix),fmt(p.achat)])});let buf=doc.output("arraybuffer");exporterFichier("rapport_complet_"+today()+".pdf",buf,"application/pdf")}
 function ventesHistoriqueFiltrees(){const q=(document.getElementById('rechercheHistorique')?.value||'').trim().toLowerCase(),debut=document.getElementById('historiqueDateDebut')?.value||'',fin=document.getElementById('historiqueDateFin')?.value||'';return [...ventes].filter(v=>{const d=String(v.date||'').slice(0,10),texte=[v.id,v.date,v.total,...(v.articles||[]).flatMap(a=>[a.nom,a.quantite,a.prix,a.achat])].join(' ').toLowerCase();return(!q||texte.includes(q))&&(!debut||d>=debut)&&(!fin||d<=fin)}).sort((a,b)=>new Date(b.date)-new Date(a.date));}
-function rendreHistorique(){const zone=document.getElementById('listeHistorique');if(!zone)return;const rows=ventesHistoriqueFiltrees(),total=rows.reduce((s,v)=>s+(Number(v.total)||0),0),c=document.getElementById('historiqueCompteur');if(c)c.innerHTML=`<span>${rows.length} vente${rows.length>1?'s':''} trouvée${rows.length>1?'s':''}</span><span class="historique-total">Total : ${fmt(total)}</span>`;if(!rows.length){zone.innerHTML='<div class="carte historique-empty">Aucune vente ne correspond à votre recherche.</div>';return;}zone.innerHTML=rows.map(v=>{const articles=(v.articles||[]).map(a=>`${String(a.nom).replace(/</g,'&lt;')} × ${a.quantite}`).join(', ');return `<div class="carte"><div class="historique-meta"><b>${String(v.date||'').slice(0,16).replace('T',' ')}</b><span>${v.id||''}</span></div><div style="margin-top:7px;font-weight:800">${articles||'Détails indisponibles'}</div><div class="historique-meta" style="margin-top:8px"><span>${(v.articles||[]).length} article${(v.articles||[]).length>1?'s':''}</span><strong class="historique-total">${fmt(v.total)}</strong></div></div>`}).join('');}
+function rendreHistorique(){const zone=document.getElementById('listeHistorique');if(!zone)return;const rows=ventesHistoriqueFiltrees(),total=rows.reduce((s,v)=>s+(Number(v.total)||0),0),c=document.getElementById('historiqueCompteur');if(c)c.innerHTML=`<span>${rows.length} vente${rows.length>1?'s':''} trouvée${rows.length>1?'s':''}</span><span class="historique-total">Total : ${fmt(total)}</span>`;if(!rows.length){zone.innerHTML='<div class="carte historique-empty">Aucune vente ne correspond à votre recherche.</div>';return;}zone.innerHTML=rows.map(v=>{const articles=(v.articles||[]).map(a=>`${String(a.nom).replace(/</g,'&lt;')} × ${a.quantite}`).join(', ');return `<div class="carte"><div class="historique-meta"><b>${String(v.date||'').slice(0,16).replace('T',' ')}</b><span>${v.id||''}</span></div><div style="margin-top:7px;font-weight:800">${articles||'Détails indisponibles'}</div><div class="historique-meta" style="margin-top:8px"><span>${(v.articles||[]).length} article${(v.articles||[]).length>1?'s':''}${v.vendeurNom?' · Par : '+String(v.vendeurNom).replace(/</g,'&lt;'):''}</span><strong class="historique-total">${fmt(v.total)}</strong></div></div>`}).join('');}
 function reinitialiserRechercheHistorique(){['rechercheHistorique','historiqueDateDebut','historiqueDateFin'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});rendreHistorique();}
 async function exportHistoriqueRecherche(){const rows=ventesHistoriqueFiltrees();if(!rows.length)return show('Aucun résultat à exporter');if(!window.ExcelJS)return show('Excel indisponible');let wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('Résultats historique');ws.addRow(['Date','Heure','Référence','Produit','Quantité','Prix unitaire','Total vente']);rows.forEach(v=>(v.articles||[]).forEach(a=>ws.addRow([String(v.date).slice(0,10),String(v.date).slice(11,16),v.id,a.nom,a.quantite,a.prix,v.total])));ajusterColonnes(ws);let buf=await wb.xlsx.writeBuffer();await exporterFichier((config.nom||'boutik_safe').replace(/[^a-z0-9]+/gi,'_')+'_recherche_historique_'+today()+'.xlsx',buf,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');}
 async function exportHistorique(){if(!window.ExcelJS)return show("Excel indisponible");if(!ventes.length)return show("Aucune vente enregistrée pour le moment");let wb=new ExcelJS.Workbook();
@@ -786,8 +811,7 @@ function verifierPremierLancement(){if(!get("entrepriseConfiguree",false)){modal
 function basculerTheme(){config.theme=config.theme==="sombre"?"clair":"sombre";set("configBoutik",config);appliquerTheme()}
 function appliquerTheme(){document.body.classList.toggle("dark",config.theme==="sombre")}
 function rafraichir(){document.getElementById("titreApp").textContent="🏪 "+config.nom;let n=produits.filter(p=>p.stock<=Number(config.seuil)).length;badgeAlerte.style.display=n?"block":"none";badgeAlerte.textContent="⚠️ "+n;badgePremium.style.display=calculPremium().actif?"none":"block"}
-function calculPremium(){let e=Number(essai)||Date.now();let finEssai=e+14*86400000;let essaiOk=Date.now()<finEssai,p=Number(premiumUntil||0)>Date.now();let joursRestants=Math.max(0,Math.ceil((finEssai-Date.now())/86400000));return{actif:essaiOk||p,essaiOk,premiumActif:p,joursRestants}}
-function rendrePremium(){statutPremium.innerHTML=calculPremium().actif?"<b class='success'>⭐ Accès actif</b>":"<b class='danger'>Premium/essai expiré</b>";codeAppareil.textContent=device}
+function calculPremium(){let e=Number(essai)||Date.now();let finEssai=e+14*86400000;let essaiOk=Date.now()<finEssai;let cloud=Number(get('cloudPremiumUntil',0))>Date.now();let local=Number(premiumUntil||0)>Date.now();let joursRestants=Math.max(0,Math.ceil((finEssai-Date.now())/86400000));return{actif:essaiOk||cloud||local,essaiOk,premiumActif:cloud||local,joursRestants}}
 function checksum(s){let h=0;for(let c of s)h=(h*31+c.charCodeAt(0))%100000;return String(h).padStart(4,"0").slice(-4)}
 function activerPremium(){let attendu="BSAFE-"+device+"-"+checksum(device+SECRET_SUPPORT+"PREMIUM");if(clePremium.value.trim().toUpperCase()!==attendu)return show("❌ Clé invalide");premiumUntil=Date.now()+365*86400000;set("expirationPremium",premiumUntil);rendrePremium();rafraichir();show("✅ Premium activé")}
 function copierNumero(numero,reseau){
@@ -904,6 +928,8 @@ async function creerCompte(){
 
     if(j.session){
       bsSession=j.session;
+      localStorage.setItem('bs_auth_session',JSON.stringify(j.session));
+      if(typeof bsClient!=='undefined'&&bsClient&&j.session.access_token&&j.session.refresh_token){try{await bsClient.auth.setSession({access_token:j.session.access_token,refresh_token:j.session.refresh_token})}catch(e){console.warn(e)}}
       if(typeof bsAfterAuth==='function') await bsAfterAuth(j.session);
       else ouvrirApplicationApresConnexion();
     }
@@ -919,7 +945,7 @@ async function connexionCompte(){
 function afficherRecuperation(){document.getElementById('authLoginForm').style.display='none';document.getElementById('authSignupForm').style.display='none';document.getElementById('authRecoveryForm').style.display='block';document.getElementById('authNewPasswordForm').style.display='none';document.getElementById('tabLogin').classList.remove('on');document.getElementById('tabSignup').classList.remove('on');authClear()}
 async function envoyerRecuperation(){
  authClear();let email=recoveryEmail.value.trim();if(!email)return authMessage('❌ Entre ton e-mail de récupération.',true);
- try{await fetch(SUPABASE_URL_V2+'/auth/v1/recover',{method:'POST',headers:authHeaders(),body:JSON.stringify({email})});authMessage('📨 Si cette adresse est associée à un compte, un message de récupération a été envoyé.');}
+ try{await fetch(SUPABASE_URL_V2+'/auth/v1/recover',{method:'POST',headers:authHeaders(),body:JSON.stringify({email,redirect_to:'https://boutiksafe.vercel.app/application.html'})});authMessage('📨 Si cette adresse est associée à un compte, un message de récupération a été envoyé.');}
  catch(e){authMessage('❌ Impossible de lancer la récupération.',true)}
 }
 function ouvrirApplicationApresConnexion(){
@@ -950,11 +976,10 @@ const BS_SUPABASE_URL='https://jgjcgsuahowjmtroxxuc.supabase.co';
 const BS_SUPABASE_KEY='sb_publishable_WXw98qovz8EUplNcbmEg1w_rwL6q_yE';
 let bsClient=null,bsUser=null,bsSession=null,bsCloudReady=false,bsSyncBusy=false;
 try{if(window.supabase?.createClient)bsClient=window.supabase.createClient(BS_SUPABASE_URL,BS_SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true}})}catch(e){console.warn(e)}
-async function bsAfterAuth(session){bsSession=session;bsUser=session.user;bsCloudReady=true;set('bsUserId',bsUser.id);set('bsEmail',bsUser.email||'');document.getElementById('authScreen').classList.add('hidden');set('bsOfflineMode',false);await bsEnsureProfile();await bsPullPremium();let cloudHasData=await bsPull();if(!cloudHasData&&bsLocalHasData())await bsSync();bsUpdateAccountUI();rendreHistorique();}
-async function bsEnsureProfile(){if(!bsClient||!bsUser)return;let name=bsUser.user_metadata?.nom_commerce||config.nom||'Boutik Safe';await bsClient.from('profiles').upsert({id:bsUser.id,email:bsUser.email||null,nom_commerce:name},{onConflict:'id'});}
-async function bsPullPremium(){if(!bsClient||!bsUser)return;let {data,error}=await bsClient.from('subscriptions').select('plan,status,expires_at').eq('user_id',bsUser.id).eq('status','active').order('expires_at',{ascending:false}).limit(1);if(!error&&data?.[0]){let until=new Date(data[0].expires_at).getTime();set('cloudPremiumUntil',until);premiumUntil=until;}}
-function bsPremiumState(){let e=Number(essai)||Date.now();let trial=Date.now()<e+14*86400000;let cloud=Number(get('cloudPremiumUntil',0))>Date.now();let local=Number(premiumUntil||0)>Date.now();return{actif:trial||cloud||local,essaiOk:trial,premiumActif:cloud||local,joursRestants:Math.max(0,Math.ceil((e+14*86400000-Date.now())/86400000))};}
-window.bsOriginalCalculPremium=window.calculPremium;window.calculPremium=bsPremiumState;
+async function bsAfterAuth(session){bsSession=session;bsUser=session.user;bsCloudReady=true;set('bsUserId',bsUser.id);set('bsEmail',bsUser.email||'');document.getElementById('authScreen').classList.add('hidden');set('bsOfflineMode',false);await bsEnsureProfile();await bsPullPremium();let cloudHasData=await bsPull();if(!cloudHasData&&bsLocalHasData())await bsSync();bsUpdateAccountUI();rendreHistorique();rendreIntervenants();if(!operateurActif())afficherChoixOperateur();else appliquerRestrictionsRole();}
+async function bsEnsureProfile(){if(!bsClient||!bsUser)return;let name=bsUser.user_metadata?.nom_commerce||config.nom||'Boutik Safe';await bsClient.from('profiles').upsert({id:bsUser.id,email:bsUser.email||null,nom_commerce:name,intervenants:getIntervenants()},{onConflict:'id'});}
+async function bsPullPremium(){if(!bsClient||!bsUser)return;let {data,error}=await bsClient.from('subscriptions').select('plan,status,expires_at').eq('user_id',bsUser.id).eq('status','active').order('expires_at',{ascending:false}).limit(1);if(!error&&data?.[0]){let until=new Date(data[0].expires_at).getTime();set('cloudPremiumUntil',until);premiumUntil=until;}if(typeof rafraichir==='function')rafraichir();}
+function bsPremiumState(){return calculPremium();}
 async function bsUpsert(table,rows){if(!bsClient||!bsUser||!rows?.length)return;let out=rows.map(x=>({...x,user_id:bsUser.id}));let {error}=await bsClient.from(table).upsert(out,{onConflict:'id'});if(error)console.warn('sync '+table,error.message);}
 function bsUuid(){return crypto?.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{let r=Math.random()*16|0,v=c==='x'?r:(r&3|8);return v.toString(16)})}
 function bsEnsureIds(){for(const arr of [produits,ventes,credits,fournisseurs,dettes,mouvements,inventaires])for(const x of arr){if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x.id)){x.id=bsUuid()}}saveAllNoSync();}
@@ -963,11 +988,11 @@ async function bsSync(){if(bsSyncBusy||!bsClient||!bsUser)return;bsSyncBusy=true
 async function bsBuildJournal(){if(!bsClient||!bsUser)return;let rows=[];ventes.forEach(v=>{rows.push({id:bsUuid(),date:new Date(v.date).toISOString(),compte_debit:'571',libelle_debit:'Caisse',compte_credit:'701',libelle_credit:'Ventes',montant:Number(v.total)||0,piece_reference:v.id,created_at:new Date(v.date).toISOString(),user_id:bsUser.id})});if(rows.length)await bsClient.from('ecritures_comptables').upsert(rows);}
 function bsLocalHasData(){return produits.length>0||ventes.length>0||credits.length>0||dettes.length>0||fournisseurs.length>0||mouvements.length>0;}
 function bsUuidFromString(str){let h1=0x811c9dc5,h2=0x9e3779b9,h3=0x85ebca6b,h4=0xc2b2ae35;for(let i=0;i<str.length;i++){let c=str.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,2246822507);h3=Math.imul(h3^c,3266489909);h4=Math.imul(h4^c,668265263)}let hex=[h1,h2,h3,h4].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');return hex.slice(0,8)+'-'+hex.slice(8,12)+'-4'+hex.slice(13,16)+'-8'+hex.slice(17,20)+'-'+hex.slice(20,32);}
-async function bsPull(){if(!bsClient||!bsUser)return false;try{const [pr,vr]=await Promise.all([bsClient.from('produits').select('*').eq('user_id',bsUser.id),bsClient.from('ventes').select('*').eq('user_id',bsUser.id)]);if(pr.error)console.warn('pull produits',pr.error.message);if(vr.error)console.warn('pull ventes',vr.error.message);const cloudProducts=pr.data||[],cloudSales=vr.data||[];const cloudHasData=cloudProducts.length>0||cloudSales.length>0;if(!cloudHasData){rendreVente();rendreHistorique();return false;}if(cloudProducts.length){produits=cloudProducts.map(p=>({id:p.id,nom:p.nom,prix:Number(p.prix)||0,achat:Number(p.achat)||0,stock:Number(p.stock)||0,codeBarre:p.code_barre||'',emoji:p.emoji||'📦',photo:p.photo||'',peremption:p.peremption||''}));set('produits',produits)}else{produits=[];set('produits',produits)}if(cloudSales.length){const {data:ls,error:le}=await bsClient.from('ventes_lignes').select('*').eq('user_id',bsUser.id);if(le)console.warn('pull ventes_lignes',le.message);const lignes=ls||[];ventes=cloudSales.map(v=>({id:v.id,date:v.date,total:Number(v.total)||0,articles:lignes.filter(l=>l.vente_id===v.id).map(l=>({nom:l.produit_nom,quantite:Number(l.quantite)||0,prix:Number(l.prix)||0,achat:Number(l.achat)||0}))}));set('ventes',ventes)}else{ventes=[];set('ventes',ventes)}rendreVente();rafraichir();rendreHistorique();return true}catch(e){console.warn('pull cloud',e);return false;}}
+async function bsPull(){if(!bsClient||!bsUser)return false;try{const [pr,vr,prof]=await Promise.all([bsClient.from('produits').select('*').eq('user_id',bsUser.id),bsClient.from('ventes').select('*').eq('user_id',bsUser.id),bsClient.from('profiles').select('intervenants').eq('id',bsUser.id).maybeSingle()]);if(pr.error)console.warn('pull produits',pr.error.message);if(vr.error)console.warn('pull ventes',vr.error.message);if(!prof.error&&Array.isArray(prof.data?.intervenants)){set('intervenants',prof.data.intervenants);rendreIntervenants();}const cloudProducts=pr.data||[],cloudSales=vr.data||[];const cloudHasData=cloudProducts.length>0||cloudSales.length>0;if(!cloudHasData){rendreVente();rendreHistorique();return false;}if(cloudProducts.length){produits=cloudProducts.map(p=>({id:p.id,nom:p.nom,prix:Number(p.prix)||0,achat:Number(p.achat)||0,stock:Number(p.stock)||0,codeBarre:p.code_barre||'',emoji:p.emoji||'📦',photo:p.photo||'',peremption:p.peremption||''}));set('produits',produits)}else{produits=[];set('produits',produits)}if(cloudSales.length){const {data:ls,error:le}=await bsClient.from('ventes_lignes').select('*').eq('user_id',bsUser.id);if(le)console.warn('pull ventes_lignes',le.message);const lignes=ls||[];ventes=cloudSales.map(v=>({id:v.id,date:v.date,total:Number(v.total)||0,vendeurNom:v.vendeur_nom||'',articles:lignes.filter(l=>l.vente_id===v.id).map(l=>({nom:l.produit_nom,quantite:Number(l.quantite)||0,prix:Number(l.prix)||0,achat:Number(l.achat)||0}))}));set('ventes',ventes)}else{ventes=[];set('ventes',ventes)}rendreVente();rafraichir();rendreHistorique();return true}catch(e){console.warn('pull cloud',e);return false;}}
 window.bsSync=async()=>{if(bsCloudReady){await bsSync();}};
 function bsUpdateAccountUI(){let el=document.getElementById('cloudAccountStatus');if(el)el.innerHTML=bsUser?'<span class="bs-account-badge">✓ '+(bsUser.email||'Compte connecté')+'</span>':'Compte non connecté';}
 function ouvrirCompteCloud(){if(!bsUser){document.getElementById('authScreen').classList.remove('hidden');return}show('Compte connecté : '+(bsUser.email||''));}
-async function deconnecterCompteCloud(){if(bsClient)await bsClient.auth.signOut();bsUser=null;bsSession=null;bsCloudReady=false;localStorage.removeItem('bsUserId');document.getElementById('authScreen').classList.remove('hidden');}
+async function deconnecterCompteCloud(){if(bsClient)await bsClient.auth.signOut();bsUser=null;bsSession=null;bsCloudReady=false;localStorage.removeItem('bsUserId');localStorage.removeItem('bsOperateurActif');document.getElementById('authScreen').classList.remove('hidden');}
 function ajouterTiers(){let nom=prompt('Nom du client, fournisseur ou autre tiers :');if(!nom)return;let type=prompt('Type : client / fournisseur / autre','client')||'autre';let tiers=get('tiersBoutik',[]);tiers.push({id:bsUuid(),nom,type,created_at:new Date().toISOString()});set('tiersBoutik',tiers);rendreGrandLivre();}
 function rendreGrandLivre(){let tiers=get('tiersBoutik',[]);document.getElementById('tiersListe').innerHTML=tiers.length?tiers.map(t=>`<div class="ligne"><div class="infos"><b>${t.nom}</b><div class="muted">${t.type}</div></div></div>`).join(''):'<p class="muted">Aucun sous-compte de tiers. Ajoutez un client, fournisseur ou autre tiers.</p>';genererGrandLivre();}
 function genererGrandLivre(){let rows=[];ventes.forEach(v=>(v.articles||[]).forEach(a=>rows.push({date:v.date,ref:v.id,tiers:'Client / caisse',debit:'571',credit:'701',libelle:'Vente '+a.nom,montant:Number(a.prix)*Number(a.quantite)})));credits.forEach(c=>rows.push({date:c.date,ref:c.id,tiers:c.client,debit:'411',credit:'701',libelle:'Vente à crédit',montant:Number(c.montant)}));dettes.forEach(d=>rows.push({date:d.date,ref:d.id,tiers:(fournisseurs.find(f=>f.id===d.fournisseurId)||{}).nom||'Fournisseur',debit:'601',credit:'401',libelle:d.motif||'Dette fournisseur',montant:Number(d.montant)}));rows.sort((a,b)=>String(a.date).localeCompare(String(b.date)));let html='<div class="carte"><b>Journal de l’entité</b><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:12px"><thead><tr><th>Date</th><th>Tiers</th><th>Débit</th><th>Crédit</th><th>Libellé</th><th>Montant</th></tr></thead><tbody>'+rows.map(r=>`<tr><td>${String(r.date).slice(0,10)}</td><td>${r.tiers}</td><td>${r.debit}</td><td>${r.credit}</td><td>${r.libelle}</td><td>${fmt(r.montant)}</td></tr>`).join('')+'</tbody></table></div></div>';document.getElementById('grandLivreTable').innerHTML=html||'<p class="muted">Aucune écriture.</p>';}
@@ -976,8 +1001,141 @@ function rendrePremium(){let st=bsPremiumState();statutPremium.innerHTML=st.acti
 const bsOriginalGo=window.go;
 window.go=function(id){if((id==='factures'||id==='grandlivre')&&!get('mentionsLegalesAcceptees',false)){show('⚠️ Acceptez d’abord les mentions légales pour accéder à cette fonction.');return;}return bsOriginalGo(id)};
 function bsLegal(){if(get('mentionsLegalesAcceptees',false))return;let ok=confirm('AVANT D’UTILISER BOUTIK SAFE\n\nLes factures générées sont un support de gestion interne et ne remplacent pas une facture normalisée conforme aux règles fiscales en vigueur, notamment la certification e-MECeF lorsqu’elle est requise.\n\nLe journal des opérations et le Grand Livre sont des outils de gestion/préparation comptable et ne dispensent pas de la vérification par un expert-comptable ou professionnel qualifié.\n\nBoutik Safe décline toute responsabilité en cas d’erreur résultant d’une saisie incorrecte, d’un mauvais paramétrage ou d’un usage non conforme aux obligations légales.\n\nCliquez sur OK pour accepter. Annuler = accès aux fonctions sensibles limité.');set('mentionsLegalesAcceptees',!!ok);if(!ok)show('Les fonctions Factures et Grand Livre restent verrouillées tant que les conditions ne sont pas acceptées.')}
-async function bsBoot(){bsLegal();if(bsCheckRecoveryLink())return;if(!bsClient){document.getElementById('authScreen').classList.remove('hidden');return}try{let saved=JSON.parse(localStorage.getItem('bs_auth_session')||'null');if(saved?.access_token&&saved?.refresh_token){try{await bsClient.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token})}catch(e){console.warn('Restauration session:',e.message)}}let {data:{session}}=await bsClient.auth.getSession();if(session){await bsAfterAuth(session);return}if(get('bsOfflineMode',false)){document.getElementById('authScreen').classList.add('hidden');return}document.getElementById('authScreen').classList.remove('hidden')}catch(e){console.warn('Initialisation compte:',e);document.getElementById('authScreen').classList.remove('hidden')}}
+function bsEnterOffline(saved){
+  bsUser=saved.user;bsSession=saved;bsCloudReady=false;
+  document.getElementById('authScreen').classList.add('hidden');
+  set('bsOfflineMode',false);
+  bsUpdateAccountUI();
+  rendreVente();rafraichir();rendreHistorique();rendreIntervenants();
+  if(!operateurActif())afficherChoixOperateur();else appliquerRestrictionsRole();
+}
+async function bsBoot(){
+  bsLegal();
+  if(bsCheckRecoveryLink())return;
+  let saved=null;try{saved=JSON.parse(localStorage.getItem('bs_auth_session')||'null')}catch{}
+  if(!bsClient){
+    if(saved?.user)return bsEnterOffline(saved);
+    document.getElementById('authScreen').classList.remove('hidden');return;
+  }
+  try{
+    if(saved?.access_token&&saved?.refresh_token){
+      try{
+        await bsClient.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token});
+        let {data:{session}}=await bsClient.auth.getSession();
+        if(session){await bsAfterAuth(session);return}
+      }catch(e){
+        console.warn('Restauration session (probablement hors-ligne) :',e.message);
+      }
+      // Réseau indisponible ou échec de rafraîchissement : on entre quand même avec les données locales
+      // plutôt que de bloquer l'utilisateur, et on retentera dès que la connexion reviendra.
+      if(saved?.user)return bsEnterOffline(saved);
+    }
+    let {data:{session}}=await bsClient.auth.getSession();
+    if(session){await bsAfterAuth(session);return}
+    if(saved?.user)return bsEnterOffline(saved);
+    if(get('bsOfflineMode',false)){document.getElementById('authScreen').classList.add('hidden');return}
+    document.getElementById('authScreen').classList.remove('hidden')
+  }catch(e){
+    console.warn('Initialisation compte:',e);
+    if(saved?.user)return bsEnterOffline(saved);
+    document.getElementById('authScreen').classList.remove('hidden')
+  }
+}
+window.addEventListener('online',()=>{if(bsClient&&!bsCloudReady&&bsUser)bsBoot()});
 if(bsClient)bsClient.auth.onAuthStateChange((_e,s)=>{if(s&&!bsUser)bsAfterAuth(s)});
+// ===== Intervenants (rôles & attribution) =====
+const ECRANS_INTERDITS_ROLE={
+  gerant:['dashboard','fournisseurs','grandlivre','parametres','premium','rapport'],
+  vendeur:['dashboard','fournisseurs','grandlivre','parametres','premium','rapport','credit']
+};
+function getIntervenants(){return get('intervenants',[])}
+function setIntervenants(list){set('intervenants',list);if(bsCloudReady)bsEnsureProfile();}
+function operateurActif(){return get('bsOperateurActif',null)}
+function definirOperateurActif(op){set('bsOperateurActif',op);appliquerRestrictionsRole();}
+function estPatron(){let op=operateurActif();return !op||op.role==='patron'}
+function roleActif(){let op=operateurActif();return op?op.role:'patron'}
+function nomOperateurActif(){let op=operateurActif();return op?op.nom:(config?.nom||'Patron')}
+
+function afficherChoixOperateur(){
+  let list=getIntervenants();
+  document.getElementById('listeOperateurs').innerHTML=
+    `<button class="btn vert" style="margin-bottom:10px" onclick="choisirPatron()">👑 Patron (vous)</button>`+
+    list.map(iv=>`<button class="btn outline" style="margin-bottom:8px;display:block;width:100%" onclick="demanderPinOperateur('${iv.id}')">${iv.role==='gerant'?'📋':'🧑‍💼'} ${String(iv.nom).replace(/</g,'&lt;')}</button>`).join('');
+  document.getElementById('operateurScreen').classList.remove('hidden');
+}
+function choisirPatron(){
+  definirOperateurActif({role:'patron',nom:config?.nom||'Patron'});
+  document.getElementById('operateurScreen').classList.add('hidden');
+}
+let ivPinCible=null;
+function demanderPinOperateur(idIv){
+  ivPinCible=idIv;
+  document.getElementById('pinOperateurSaisie').value='';
+  document.getElementById('pinOperateurErreur').style.display='none';
+  modal('m-pin-operateur');
+}
+function validerPinOperateur(){
+  let iv=getIntervenants().find(x=>x.id===ivPinCible);if(!iv)return;
+  let saisi=document.getElementById('pinOperateurSaisie').value.trim();
+  if(saisi!==iv.pin){document.getElementById('pinOperateurErreur').textContent='❌ Code PIN incorrect.';document.getElementById('pinOperateurErreur').style.display='block';return}
+  fermer('m-pin-operateur');
+  definirOperateurActif({id:iv.id,role:iv.role,nom:iv.nom});
+  document.getElementById('operateurScreen').classList.add('hidden');
+}
+function ouvrirIntervenant(idIv=null){
+  editIntervenantId=idIv;
+  let iv=idIv?getIntervenants().find(x=>x.id===idIv):null;
+  document.getElementById('intervenantTitre').textContent=iv?'Modifier intervenant':'Nouvel intervenant';
+  document.getElementById('ivNom').value=iv?.nom||'';
+  document.getElementById('ivRole').value=iv?.role||'vendeur';
+  document.getElementById('ivPin').value='';
+  document.getElementById('ivPin').placeholder=iv?'Laisser vide pour garder l\u2019actuel, ou entrer un nouveau code':'••••';
+  document.getElementById('supIntervenant').style.display=iv?'block':'none';
+  modal('m-intervenant');
+}
+let editIntervenantId=null;
+function sauverIntervenant(){
+  let nom=document.getElementById('ivNom').value.trim(),role=document.getElementById('ivRole').value,pin=document.getElementById('ivPin').value.trim();
+  if(!nom)return show('⚠️ Indique un nom.');
+  let list=getIntervenants();
+  if(editIntervenantId){
+    list=list.map(x=>x.id===editIntervenantId?{...x,nom,role,pin:pin?pin:x.pin}:x);
+    if(!pin&&!list.find(x=>x.id===editIntervenantId).pin)return show('⚠️ Ce code PIN doit contenir 4 chiffres.');
+  }else{
+    if(!/^\d{4}$/.test(pin))return show('⚠️ Le code PIN doit contenir exactement 4 chiffres.');
+    list.push({id:id(),nom,role,pin});
+  }
+  setIntervenants(list);fermer('m-intervenant');rendreIntervenants();show('✅ Intervenant enregistré');
+}
+function supprimerIntervenant(){
+  if(!editIntervenantId)return;
+  setIntervenants(getIntervenants().filter(x=>x.id!==editIntervenantId));
+  fermer('m-intervenant');rendreIntervenants();show('🗑️ Intervenant supprimé');
+}
+function rendreIntervenants(){
+  let zone=document.getElementById('listeIntervenants');if(!zone)return;
+  let list=getIntervenants();
+  zone.innerHTML=list.length?list.map(iv=>`<div class="carte" style="margin-bottom:8px;cursor:pointer" onclick="ouvrirIntervenant('${iv.id}')"><b>${iv.role==='gerant'?'📋':'🧑‍💼'} ${String(iv.nom).replace(/</g,'&lt;')}</b><div class="muted">${iv.role==='gerant'?'Gérant':'Vendeur / Caissier'} · PIN : ••••</div></div>`).join(''):`<p class="muted">Aucun intervenant pour le moment.</p>`;
+}
+function appliquerRestrictionsRole(){
+  let interdits=ECRANS_INTERDITS_ROLE[roleActif()]||[];
+  let lbl=document.getElementById('operateurActifNom');if(lbl)lbl.textContent=nomOperateurActif();
+  document.getElementById('carteIntervenants')?.style && (document.getElementById('carteIntervenants').style.display=estPatron()?'block':'none');
+  document.getElementById('pAchatWrap')?.style && (document.getElementById('pAchatWrap').style.display=estPatron()?'block':'none');
+  document.querySelectorAll('.menu-tile[onclick]').forEach(t=>{
+    let m=t.getAttribute('onclick').match(/go\('(\w+)'\)/);
+    if(m&&interdits.includes(m[1]))t.style.display='none';else if(m)t.style.display='';
+  });
+  let boutonRapport=document.querySelector('nav [data-go="rapport"]');
+  if(boutonRapport)boutonRapport.style.display=interdits.includes('rapport')?'none':'';
+}
+const _goOriginal=go;
+go=function(id){
+  let interdits=ECRANS_INTERDITS_ROLE[roleActif()]||[];
+  if(interdits.includes(id)){show('🔒 Accès réservé au Patron.');return}
+  return _goOriginal(id);
+};
+
 setTimeout(bsBoot,500);setInterval(()=>{if(bsCloudReady)bsSync()},45000);
 </script>
 </body></html>
