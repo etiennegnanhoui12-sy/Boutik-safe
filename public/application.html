@@ -91,6 +91,11 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
       <label>🔐 Nouveau mot de passe</label><input id="newPasswordRecup" type="password" autocomplete="new-password" placeholder="8 caractères minimum">
       <button class="btn vert" onclick="definirNouveauMotDePasse()">✅ Valider le nouveau mot de passe</button>
     </div>
+    <div id="authNewPinForm" style="display:none">
+      <h3 style="margin-bottom:4px">🔐 Nouveau PIN de gestion</h3><p class="auth-sub">Choisissez un nouveau code PIN à 4 chiffres pour protéger le stock, la caisse, les fournisseurs et les paramètres.</p>
+      <label>🔐 Nouveau PIN (4 chiffres)</label><input id="newPinRecup" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="••••">
+      <button class="btn vert" onclick="definirNouveauPinRecup()">✅ Valider le nouveau PIN</button>
+    </div>
     <div class="auth-device">Code appareil : <b id="authDeviceCode">—</b></div>
     <p class="auth-small">Développé par <b>Etienne GNANHOUI</b></p>
   </div>
@@ -173,8 +178,9 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 </section>
 
 <section id="e-factures" class="ecran">
-<h2>🧾 Factures récentes</h2>
-<p class="muted">Les 5 dernières factures générées. Tu peux les réimprimer ou les réexporter à tout moment.</p>
+<h2>🧾 Factures</h2>
+<p class="muted">Historique complet des factures générées. Tu peux les réimprimer, les réexporter individuellement, ou exporter tout l'historique en un clic.</p>
+<button class="btn outline" onclick="exporterToutesFactures()" style="margin-bottom:10px">📥 Exporter toutes les factures (Excel)</button>
 <div id="listeFacturesRecentes"></div>
 </section>
 
@@ -219,9 +225,10 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <div class="carte"><b>Nom de l'entreprise</b><input id="nomEntreprise"><button class="btn vert" onclick="sauverParametres()">💾 Enregistrer</button></div>
 <div class="carte"><b>Seuil d'alerte stock</b><input id="seuilStock" type="number" min="0" step="0.1"><button class="btn vert" onclick="sauverParametres()">Enregistrer</button></div>
 <div class="carte"><b>🗂️ Historique complet des ventes</b><p class="muted" style="margin:4px 0 8px">Exporte, à tout moment, la totalité de l'historique de ventes enregistré depuis le début — distinct du rapport du jour.</p><button class="btn outline" onclick="exportHistorique()">📥 Exporter l'historique (Excel)</button></div>
-<div class="carte"><b>PIN de gestion</b><p class="muted">Le PIN protège le stock, la caisse, les fournisseurs et les paramètres.</p><button class="btn jaune" onclick="changerPin()">🔐 Modifier PIN / mot secret</button><button class="btn outline" onclick="testerNotification()">🔔 Tester notification</button></div>
+<div class="carte"><b>PIN de gestion</b><p class="muted">Le PIN protège le stock, la caisse, les fournisseurs et les paramètres. En cas d'oubli, la récupération se fait par e-mail depuis l'écran de connexion.</p><button class="btn jaune" onclick="changerPin()">🔐 Modifier le PIN</button><button class="btn outline" onclick="testerNotification()">🔔 Tester notification</button></div>
 <div class="carte"><b>👤 Compte BoutikSafe</b><p id="cloudAccountStatus" class="muted">Compte non connecté</p><button class="btn outline" onclick="ouvrirCompteCloud()">🔐 Gérer mon compte</button><button class="btn gris" onclick="deconnecterCompteCloud()">Se déconnecter</button></div>
 <div class="carte"><b>Apparence</b><button class="btn gris" onclick="basculerTheme()">🌙 Mode sombre / clair</button></div>
+<div class="carte"><b>💬 Besoin d'aide ?</b><p class="muted" style="margin:4px 0 8px">Contacte le support directement sur WhatsApp.</p><button class="btn vert" onclick="window.open('https://wa.me/'+SUPPORT,'_blank')">💬 Contacter le support (WhatsApp)</button></div>
 <div class="carte" id="carteIntervenants"><b>👥 Intervenants (vendeurs, gérants)</b><p class="muted" style="margin:4px 0 8px">Ajoute les personnes qui utilisent l'application avec toi. Chacune a un code PIN à 4 chiffres et un accès limité selon son rôle. Seul toi, en tant que Patron, peux les gérer et réinitialiser un PIN oublié.</p><div id="listeIntervenants"></div><button class="btn vert" onclick="ouvrirIntervenant()">➕ Ajouter un intervenant</button></div>
 </section>
 
@@ -245,9 +252,9 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 <button class="btn outline" type="button" onclick="supprimerPhotoProduit()">🗑️ Retirer la photo</button>
 <label>Emoji (utilisé si aucune photo, perso ou par défaut, n'est disponible)</label><input id="pEmoji" placeholder="Auto (basé sur le nom) ou saisis le tien"><button class="btn vert" onclick="sauverProduit()">💾 Enregistrer</button><button id="supProd" class="btn rouge" onclick="supprimerProduit()">🗑️ Supprimer</button></div></div>
 
-<div id="m-credit" class="modal"><div class="box"><button class="close" onclick="fermer('m-credit')">✕</button><h2>Vente à crédit</h2><label>Client</label><input id="cNom"><label>WhatsApp</label><input id="cTel"><label>Montant</label><input id="cMontant" type="number" step="0.01"><button class="btn vert" onclick="sauverCredit()">Enregistrer</button></div></div>
+<div id="m-credit" class="modal"><div class="box"><button class="close" onclick="fermer('m-credit')">✕</button><h2>Vente à crédit</h2><label>Client</label><input id="cNom"><label>WhatsApp</label><input id="cTel"><label>Montant</label><input id="cMontant" type="number" step="0.01"><label>Photo (preuve, facultatif)</label><input id="cPhoto" type="file" accept="image/*" capture="environment"><div id="cPhotoApercu" class="muted" style="margin-top:6px;font-size:12px">Aucune photo</div><button class="btn outline" type="button" onclick="retirerPhotoPreuve('cPhoto','cPhotoApercu',v=>creditPhotoTemp=v)">🗑️ Retirer la photo</button><button class="btn vert" onclick="sauverCredit()">Enregistrer</button></div></div>
 
-<div id="m-mouvement" class="modal"><div class="box"><button class="close" onclick="fermer('m-mouvement')">✕</button><h2 id="mouvTitre">Mouvement</h2><label>Montant</label><input id="mouvMontant" type="number" step="0.01"><label>Motif</label><input id="mouvMotif"><button class="btn vert" onclick="sauverMouvement()">Enregistrer</button></div></div>
+<div id="m-mouvement" class="modal"><div class="box"><button class="close" onclick="fermer('m-mouvement')">✕</button><h2 id="mouvTitre">Mouvement</h2><label>Montant</label><input id="mouvMontant" type="number" step="0.01"><label>Motif</label><input id="mouvMotif"><label>Photo (preuve, facultatif)</label><input id="mouvPhoto" type="file" accept="image/*" capture="environment"><div id="mouvPhotoApercu" class="muted" style="margin-top:6px;font-size:12px">Aucune photo</div><button class="btn outline" type="button" onclick="retirerPhotoPreuve('mouvPhoto','mouvPhotoApercu',v=>mouvPhotoTemp=v)">🗑️ Retirer la photo</button><button class="btn vert" onclick="sauverMouvement()">Enregistrer</button></div></div>
 
 <div id="m-fournisseur" class="modal"><div class="box"><button class="close" onclick="fermer('m-fournisseur')">✕</button><h2>Fournisseur</h2><label>Nom</label><input id="fNom"><label>Téléphone</label><input id="fTel"><button class="btn vert" onclick="sauverFournisseur()">Enregistrer</button></div></div>
 
@@ -259,7 +266,8 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 
 <div id="m-facture-client" class="modal"><div class="box"><h2>🧾 Nom du client</h2><p class="muted">Facultatif — laissez vide si non renseigné.</p><label>Nom du client</label><input id="factureNomClient" placeholder="Ex : Moussa (facultatif)"><button class="btn vert" onclick="genererEtEnvoyerFacture()"><span id="actionFactureLbl2">Imprimer</span></button><button class="btn outline" onclick="fermer('m-facture-client')">Annuler</button></div></div>
 
-<div id="m-dette" class="modal"><div class="box"><button class="close" onclick="fermer('m-dette')">✕</button><h2>Dette fournisseur</h2><label>Fournisseur</label><select id="dFour"></select><label>Montant</label><input id="dMontant" type="number" step="0.01"><label>Motif</label><input id="dMotif"><button class="btn vert" onclick="sauverDette()">Enregistrer</button></div></div>
+<div id="m-preuve" class="modal"><div class="box"><button class="close" onclick="fermer('m-preuve')">✕</button><h2>📷 Preuve</h2><img id="preuveImg" style="max-width:100%;border-radius:10px;display:block;margin-top:6px"></div></div>
+<div id="m-dette" class="modal"><div class="box"><button class="close" onclick="fermer('m-dette')">✕</button><h2>Dette fournisseur</h2><label>Fournisseur</label><select id="dFour"></select><label>Montant</label><input id="dMontant" type="number" step="0.01"><label>Motif</label><input id="dMotif"><label>Photo (preuve, facultatif)</label><input id="dPhoto" type="file" accept="image/*" capture="environment"><div id="dPhotoApercu" class="muted" style="margin-top:6px;font-size:12px">Aucune photo</div><button class="btn outline" type="button" onclick="retirerPhotoPreuve('dPhoto','dPhotoApercu',v=>dettePhotoTemp=v)">🗑️ Retirer la photo</button><button class="btn vert" onclick="sauverDette()">Enregistrer</button></div></div>
 
 <div id="m-inventaire" class="modal"><div class="box"><button class="close" onclick="fermer('m-inventaire')">✕</button><h2>📋 Inventaire partiel</h2><p class="muted">Sélectionne un rayon/produit et sa quantité réellement comptée.</p><div id="invListe"></div><button class="btn vert" onclick="sauverInventaire()">💾 Enregistrer le comptage</button></div></div>
 
@@ -271,12 +279,12 @@ label{display:block;font-size:12px;font-weight:800;color:#4b5563;margin-top:9px}
 
 <div id="m-client" class="modal"><div class="box"><button class="close" onclick="fermer('m-client')">✕</button><h2>👤 Relevé client</h2><label>Nom ou numéro du client</label><input id="clientRecherche"><button class="btn vert" onclick="exportReleveClient()">📄 Générer PDF</button></div></div>
 
-<div id="pinScreen" class="pin"><div class="pinbox"><div style="font-size:46px">🔐</div><h2 id="pinTitre">Code PIN</h2><p id="pinSousTitre">Protège ta boutique</p><div class="dots" id="dots"></div><div class="keys" id="keys"></div><button id="pinForgot" class="link" onclick="recupPin()">Code oublié ?</button><div id="secretZone" style="display:none"><label style="color:#fff">Mot secret</label><input id="secretInput" style="color:#111"><button class="btn vert" onclick="verifierSecret()">Réinitialiser</button><button class="link" onclick="recupSupport()">Je n'ai plus mon mot secret</button></div><div id="supportZone" style="display:none"><div id="deviceCode" class="kpi"></div><button class="btn jaune" onclick="envoyerRecup()">💬 Envoyer au support</button><label style="color:#fff">Code de déverrouillage</label><input id="masterCode" style="color:#111"><button class="btn vert" onclick="validerMaitre()">Réinitialiser</button></div></div></div>
+<div id="pinScreen" class="pin"><div class="pinbox"><div style="font-size:46px">🔐</div><h2 id="pinTitre">Code PIN</h2><p id="pinSousTitre">Protège ta boutique</p><div class="dots" id="dots"></div><div class="keys" id="keys"></div><button id="pinForgot" class="link" onclick="recupPin()">Code oublié ?</button><div id="pinRecupZone" style="display:none;color:#fff;text-align:center;margin-top:10px"><p id="pinRecupMsg" style="font-size:13px;line-height:1.5"></p></div></div></div>
 
 
 
 <script>
-const SUPPORT="2290163495733", SECRET_SUPPORT="JESUS4312", DEPOT="0163495733", PAIEMENT_MOOV="0163495733", PAIEMENT_MTN="0191283141", PAIEMENT_CELTIS="0140791729";
+const SUPPORT="2290163495733", DEPOT="0163495733", PAIEMENT_MOOV="0163495733", PAIEMENT_MTN="0191283141", PAIEMENT_CELTIS="0140791729";
 const INIT=[];
 const PRODUITS_DEFAUT_A_SUPPRIMER=["Lait en poudre","Pain","Savon","Riz (kg)"];
 const get=(k,d)=>{try{let x=localStorage.getItem(k);return x===null?d:JSON.parse(x)}catch{return d}};
@@ -294,9 +302,9 @@ if(!get("nettoyageProduitsDefautV2",false)){
 produits=produits.map(p=>({...p,emoji:p.emoji||"📦",photo:p.photo||""}));
 let ventes=get("ventes",[]), credits=get("credits",[]), mouvements=get("mouvementsCaisse",[]), fournisseurs=get("fournisseurs",[]), dettes=get("dettesFournisseurs",[]), inventaires=get("inventaires",[]);
 let mouvementsStock=get("mouvementsStock",[]);
-let config=get("configBoutik",{nom:"Boutik Safe",seuil:5,theme:"clair"}), panier=get("panierSauve",{}), editId=null, mouvType="entree", currentPin="", pinMode="normal", invTemp=[], photoProduitTemp="", emojiAutoActif=true, dernierAutoEmoji="";
+let config=get("configBoutik",{nom:"Boutik Safe",seuil:5,theme:"clair"}), panier=get("panierSauve",{}), editId=null, mouvType="entree", currentPin="", pinMode="normal", invTemp=[], photoProduitTemp="", emojiAutoActif=true, dernierAutoEmoji="", mouvPhotoTemp="", dettePhotoTemp="", creditPhotoTemp="";
 let device=get("codeAppareil",null);if(!device){device=Math.random().toString(36).slice(2,8).toUpperCase();set("codeAppareil",device)}
-let pin=get("pinBoutique",null), secret=get("motSecretPIN",null), premiumUntil=get("expirationPremium",null), essai=get("essaiDebut",null);if(!essai){essai=Date.now();set("essaiDebut",essai)}
+let pin=get("pinBoutique",null), premiumUntil=get("expirationPremium",null), essai=get("essaiDebut",null);if(!essai){essai=Date.now();set("essaiDebut",essai)}
 const fmt=n=>new Intl.NumberFormat("fr-FR").format(Number(n)||0)+" F", id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6), today=()=>new Date().toISOString().slice(0,10), show=t=>{let e=document.getElementById("flash");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2200)};
 // Échappement HTML global : toute donnée saisie par un utilisateur (nom produit, client, fournisseur, motif, emoji perso, etc.)
 // doit passer par esc() avant d'être injectée dans un innerHTML, pour empêcher une injection XSS stockée.
@@ -527,6 +535,22 @@ function chargerPhotoProduit(file){
     r.readAsDataURL(file);
   });
 }
+// Réutilisée pour la photo-preuve des mouvements de caisse, dettes fournisseurs et crédits clients.
+function chargerPhotoPreuve(file){return chargerPhotoProduit(file)}
+function brancherPhotoPreuve(inputId,apercuId,getTemp,setTemp){
+  const f=document.getElementById(inputId);
+  if(f)f.onchange=async()=>{setTemp(await chargerPhotoPreuve(f.files[0]));majApercuPreuve(apercuId,getTemp())};
+}
+function afficherPreuve(photo){if(!photo)return;document.getElementById("preuveImg").src=photo;modal("m-preuve")}
+function majApercuPreuve(apercuId,photo){
+  const a=document.getElementById(apercuId);if(!a)return;
+  a.innerHTML=photo?`<img src="${photo}" style="max-width:120px;border-radius:10px;display:block;margin-top:4px">`:"Aucune photo";
+}
+function retirerPhotoPreuve(inputId,apercuId,setTemp){
+  setTemp("");
+  const f=document.getElementById(inputId);if(f)f.value="";
+  majApercuPreuve(apercuId,"");
+}
 
 function ouvrirProduit(prodId=null){
   editId=prodId;
@@ -656,7 +680,7 @@ async function genererEtEnvoyerFacture(){
  let numero=prochainNumeroFacture();
  let recu=Number(document.getElementById("montantRecu")?.value)||0;
  let facture={numero,date:v.date,client,articles:v.articles,total:v.total,recu:recu>=v.total?recu:null,monnaie:recu>=v.total?recu-v.total:null};
- let archives=get("facturesRecentes",[]);archives.unshift(facture);archives=archives.slice(0,5);set("facturesRecentes",archives);
+ let archives=get("facturesRecentes",[]);archives.unshift(facture);set("facturesRecentes",archives);
  fermer("m-facture-client");
  const estNatif=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform();
  if(estNatif){await exporterFacturePDF(facture)}else{imprimerFacture(facture)}
@@ -746,6 +770,20 @@ function rendreFacturesRecentes(){
  c.innerHTML=archives.length?archives.map(f=>`<div class="carte"><b>${esc(f.numero)}</b> — ${esc(f.client)}<div class="muted">${new Date(f.date).toLocaleString("fr-FR")} · ${fmt(f.total)}</div><button class="btn outline" onclick='rejouerFacture(${JSON.stringify(f).replace(/'/g,"&#39;")})'>${(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())?"📤 Réexporter":"🖨️ Réimprimer"}</button></div>`).join(""):"<p class='muted'>Aucune facture récente.</p>";
 }
 function rejouerFacture(f){if(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())exporterFacturePDF(f);else imprimerFacture(f)}
+async function exporterToutesFactures(){
+ let archives=get("facturesRecentes",[]);
+ if(!archives.length)return show("Aucune facture enregistrée pour le moment");
+ if(!window.ExcelJS)return show("Excel indisponible");
+ let wb=new ExcelJS.Workbook();
+ let ws=wb.addWorksheet("Factures");
+ ws.addRow(["Numéro","Date","Heure","Client","Produit","Quantité","Prix unitaire","Total ligne","Total facture","Reçu","Monnaie"]);
+ [...archives].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(f=>{
+  (f.articles||[]).forEach(a=>ws.addRow([f.numero,String(f.date).slice(0,10),String(f.date).slice(11,16),f.client||"",a.nom,a.quantite,a.prix,a.prix*a.quantite,f.total,f.recu==null?"":f.recu,f.monnaie==null?"":f.monnaie]));
+ });
+ ajusterColonnes(ws);
+ let buf=await wb.xlsx.writeBuffer();
+ await exporterFichier((config.nom||"boutik_safe").replace(/[^a-z0-9]+/gi,"_")+"_factures_"+today()+".xlsx",buf,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+}
 function chercherCode(){let c=codeVente.value.trim(),p=produits.find(x=>x.codeBarre===c);codeVente.value="";if(p){panier[p.id]=Number(panier[p.id]||0)+1;set("panierSauve",panier);rendreVente()}else if(c){ouvrirProduit();pCode.value=c;show("🆕 Nouveau produit")}}
 let scanCb=null,stream=null;
 async function scanCode(dest){scanCb=dest;if(!navigator.mediaDevices?.getUserMedia)return show("Caméra indisponible : utilise le code manuel");
@@ -756,10 +794,10 @@ function rendreStock(){
  let seuil=Number(config.seuil)||5;alertes.innerHTML=produits.filter(p=>p.stock<=seuil).map(p=>`<div class="carte danger">⚠️ ${esc(p.nom)} : ${p.stock} restant(s)</div>`).join("");
  listeStock.innerHTML=produits.map(p=>`<div class="ligne" onclick="ouvrirProduit('${p.id}')"><div style="width:54px;flex:none">${imageProduit(p,50)}</div><div class="infos"><b>${esc(p.nom)}</b><div class="muted">Vente ${fmt(p.prix)} · Achat ${fmt(p.achat)}</div><div class="muted">Code : ${esc(p.codeBarre)||"auto/manquant"}</div></div><span class="tag ${p.stock<=seuil?"bad":""}">${p.stock}</span></div>`).join("");
 }
-function ouvrirCredit(){cNom.value="";cTel.value="";cMontant.value="";modal("m-credit")}
-function sauverCredit(){let n=cNom.value.trim(),t=cTel.value.trim(),m=Number(cMontant.value);if(!n||!t||!m)return show("⚠️ Champs incomplets");credits.push({id:id(),client:n,numero:t,montant:m,date:today(),paye:false});saveAll();fermer("m-credit");rendreCredit()}
+function ouvrirCredit(){cNom.value="";cTel.value="";cMontant.value="";creditPhotoTemp="";majApercuPreuve("cPhotoApercu","");brancherPhotoPreuve("cPhoto","cPhotoApercu",()=>creditPhotoTemp,v=>creditPhotoTemp=v);modal("m-credit")}
+function sauverCredit(){let n=cNom.value.trim(),t=cTel.value.trim(),m=Number(cMontant.value);if(!n||!t||!m)return show("⚠️ Champs incomplets");credits.push({id:id(),client:n,numero:t,montant:m,date:today(),paye:false,photo:creditPhotoTemp||""});saveAll();fermer("m-credit");rendreCredit()}
 function rendreCredit(){
- listeCredit.innerHTML=credits.length?credits.map(c=>`<div class="carte"><b>${esc(c.client)}</b><div class="muted">${esc(c.numero)} · ${c.date}</div><div class="${c.paye?"success":"danger"}" style="font-weight:900">${fmt(c.montant)}</div>${!c.paye?`<div class="row"><a class="btn vert" href="https://wa.me/${c.numero.replace(/[^0-9]/g,"")}?text=${encodeURIComponent("Bonjour "+c.client+", rappel de "+fmt(c.montant)+" à payer.")}" target="_blank">💬 Rappel</a><button class="btn outline" onclick="payerCredit('${c.id}')">✅ Payé</button></div>`:"<b class='success'>Soldé</b>"}</div>`).join(""):"<p class='muted'>Aucun crédit.</p>"
+ listeCredit.innerHTML=credits.length?credits.map(c=>`<div class="carte"><b>${esc(c.client)}</b><div class="muted">${esc(c.numero)} · ${c.date}</div><div class="${c.paye?"success":"danger"}" style="font-weight:900">${fmt(c.montant)}</div>${c.photo?`<button class="btn outline" style="max-width:50px" onclick="afficherPreuve('${c.photo}')">📷</button>`:""}${!c.paye?`<div class="row"><a class="btn vert" href="https://wa.me/${c.numero.replace(/[^0-9]/g,"")}?text=${encodeURIComponent("Bonjour "+c.client+", rappel de "+fmt(c.montant)+" à payer.")}" target="_blank">💬 Rappel</a><button class="btn outline" onclick="payerCredit('${c.id}')">✅ Payé</button></div>`:"<b class='success'>Soldé</b>"}</div>`).join(""):"<p class='muted'>Aucun crédit.</p>"
 }
 function payerCredit(idc){credits=credits.map(c=>c.id===idc?{...c,paye:true,datePaiement:today()}:c);saveAll();rendreCredit()}
 function calculJour(){let d=today(),vs=ventes.filter(v=>v.date.slice(0,10)===d),ca=vs.reduce((s,v)=>s+v.total,0),benef=vs.reduce((s,v)=>s+v.articles.reduce((z,a)=>z+(a.prix-a.achat)*a.quantite,0),0);return{vs,ca,benef}}
@@ -827,16 +865,16 @@ function envoyerRapport(){let par=genererParagraphePourDate(today(),false).texte
 function rendreDashboard(){
  let c=calculJour(),top=ventes.flatMap(v=>v.articles).reduce((a,x)=>{a[x.nom]=(a[x.nom]||0)+x.quantite;return a},{});
  let tops=Object.entries(top).sort((a,b)=>b[1]-a[1]).slice(0,5);dashboardStats.innerHTML=`<div class="stat big"><small>CA total</small><div class="kpi">${fmt(ventes.reduce((s,v)=>s+v.total,0))}</div></div><div class="stat"><small>Profit</small><strong>${fmt(ventes.reduce((s,v)=>s+v.articles.reduce((z,a)=>z+(a.prix-a.achat)*a.quantite,0),0))}</strong></div><div class="stat"><small>Résultat net</small><strong>${fmt(resultatNet())}</strong></div><div class="stat"><small>Dettes fournisseurs</small><strong>${fmt(totalDettes())}</strong></div><div class="stat"><small>Dépenses</small><strong>${fmt(totalDepenses())}</strong></div>`;topProduits.innerHTML="<b>🏆 Top produits</b>"+(tops.length?tops.map((x,i)=>`<p>${i+1}. ${esc(x[0])} — ${x[1]} unité(s)</p>`).join(""):"<p class='muted'>Aucune vente</p>");dashAlertes.innerHTML=(get("alertesSurvente",[]).map(a=>`<div class="carte danger">🔴 Survente détectée : ${esc(a.nom)} — ${a.manque} unité(s) vendue(s) en trop (probablement deux ventes hors-ligne simultanées). Stock à régulariser.</div>`).join(""))+produits.filter(p=>p.stock<=Number(config.seuil)).map(p=>`<div class="carte danger">⚠️ Stock faible : ${esc(p.nom)} (${p.stock})</div>`).join("")}
-function ouvrirMouvement(t){mouvType=t;mouvTitre.textContent=t==="entree"?"Entrée de caisse":"Dépense";mouvMontant.value="";mouvMotif.value="";modal("m-mouvement")}
-function sauverMouvement(){let m=Number(mouvMontant.value);if(!m)return; mouvements.push({id:id(),type:mouvType,montant:m,motif:mouvMotif.value.trim(),date:new Date().toISOString()});saveAll();fermer("m-mouvement");rendreCaisse()}
-function rendreCaisse(){let ent=mouvements.filter(x=>x.type==="entree").reduce((s,x)=>s+x.montant,0),sort=mouvements.filter(x=>x.type==="sortie").reduce((s,x)=>s+x.montant,0),vent=ventes.reduce((s,v)=>s+v.total,0);soldeCaisse.textContent=fmt(vent+ent-sort);entreesCaisse.textContent=fmt(vent+ent);sortiesCaisse.textContent=fmt(sort);journalCaisse.innerHTML=mouvements.slice().reverse().map(x=>`<div class="ligne"><div class="infos"><b>${x.type==="entree"?"➕":"➖"} ${esc(x.motif)||"Mouvement"}</b><div class="muted">${x.date.slice(0,16).replace("T"," ")}</div></div><strong>${fmt(x.montant)}</strong></div>`).join("")}
+function ouvrirMouvement(t){mouvType=t;mouvTitre.textContent=t==="entree"?"Entrée de caisse":"Dépense";mouvMontant.value="";mouvMotif.value="";mouvPhotoTemp="";majApercuPreuve("mouvPhotoApercu","");brancherPhotoPreuve("mouvPhoto","mouvPhotoApercu",()=>mouvPhotoTemp,v=>mouvPhotoTemp=v);modal("m-mouvement")}
+function sauverMouvement(){let m=Number(mouvMontant.value);if(!m)return; mouvements.push({id:id(),type:mouvType,montant:m,motif:mouvMotif.value.trim(),date:new Date().toISOString(),photo:mouvPhotoTemp||""});saveAll();fermer("m-mouvement");rendreCaisse()}
+function rendreCaisse(){let ent=mouvements.filter(x=>x.type==="entree").reduce((s,x)=>s+x.montant,0),sort=mouvements.filter(x=>x.type==="sortie").reduce((s,x)=>s+x.montant,0),vent=ventes.reduce((s,v)=>s+v.total,0);soldeCaisse.textContent=fmt(vent+ent-sort);entreesCaisse.textContent=fmt(vent+ent);sortiesCaisse.textContent=fmt(sort);journalCaisse.innerHTML=mouvements.slice().reverse().map(x=>`<div class="ligne"><div class="infos"><b>${x.type==="entree"?"➕":"➖"} ${esc(x.motif)||"Mouvement"}</b><div class="muted">${x.date.slice(0,16).replace("T"," ")}</div></div><strong>${fmt(x.montant)}</strong>${x.photo?`<button class="btn outline" style="max-width:50px" onclick="afficherPreuve('${x.photo}')">📷</button>`:""}</div>`).join("")}
 function cloturerCaisse(){let {jsPDF}=window.jspdf;if(!jsPDF)return show("PDF indisponible");let doc=new jsPDF();doc.text("Clôture de caisse — "+config.nom,14,16);doc.text("Date : "+today(),14,23);doc.autoTable({startY:30,head:[["Indicateur","Montant"]],body:[["Ventes",fmt(ventes.filter(v=>v.date.slice(0,10)===today()).reduce((s,v)=>s+v.total,0))],["Entrées",fmt(mouvements.filter(x=>x.type==="entree"&&x.date.slice(0,10)===today()).reduce((s,x)=>s+x.montant,0))],["Dépenses",fmt(mouvements.filter(x=>x.type==="sortie"&&x.date.slice(0,10)===today()).reduce((s,x)=>s+x.montant,0))]]});doc.save("cloture_caisse_"+today()+".pdf");show("📄 Clôture exportée")}
 function ouvrirFournisseur(){fNom.value="";fTel.value="";modal("m-fournisseur")}
 function sauverFournisseur(){let n=fNom.value.trim();if(!n)return;fournisseurs.push({id:id(),nom:n,tel:fTel.value.trim()});saveAll();fermer("m-fournisseur");rendreFournisseurs()}
-function ouvrirDette(){if(!fournisseurs.length)return show("Ajoute d'abord un fournisseur");dFour.innerHTML=fournisseurs.map(f=>`<option value="${f.id}">${esc(f.nom)}</option>`).join("");dMontant.value="";dMotif.value="";modal("m-dette")}
-function sauverDette(){let m=Number(dMontant.value),fid=dFour.value;if(!m)return;dettes.push({id:id(),fournisseurId:fid,montant:m,motif:dMotif.value,date:today(),paye:false});saveAll();fermer("m-dette");rendreFournisseurs()}
+function ouvrirDette(){if(!fournisseurs.length)return show("Ajoute d'abord un fournisseur");dFour.innerHTML=fournisseurs.map(f=>`<option value="${f.id}">${esc(f.nom)}</option>`).join("");dMontant.value="";dMotif.value="";dettePhotoTemp="";majApercuPreuve("dPhotoApercu","");brancherPhotoPreuve("dPhoto","dPhotoApercu",()=>dettePhotoTemp,v=>dettePhotoTemp=v);modal("m-dette")}
+function sauverDette(){let m=Number(dMontant.value),fid=dFour.value;if(!m)return;dettes.push({id:id(),fournisseurId:fid,montant:m,motif:dMotif.value,date:today(),paye:false,photo:dettePhotoTemp||""});saveAll();fermer("m-dette");rendreFournisseurs()}
 function payerDette(i){dettes=dettes.map(d=>d.id===i?{...d,paye:true,datePaiement:today()}:d);saveAll();rendreFournisseurs()}
-function rendreFournisseurs(){listeFournisseurs.innerHTML=fournisseurs.map(f=>{let ds=dettes.filter(d=>d.fournisseurId===f.id),total=ds.filter(d=>!d.paye).reduce((s,d)=>s+d.montant,0);return `<div class="carte"><b>${esc(f.nom)}</b><div class="muted">${esc(f.tel)||"Pas de téléphone"}</div><div class="danger" style="font-weight:900">Dette : ${fmt(total)}</div>${ds.filter(d=>!d.paye).map(d=>`<div class="ligne"><div class="infos">${esc(d.motif)||"Dette"}<div class="muted">${d.date}</div></div><strong>${fmt(d.montant)}</strong><button class="btn outline" style="max-width:80px" onclick="payerDette('${d.id}')">Payé</button></div>`).join("")}</div>`}).join("")||"<p class='muted'>Aucun fournisseur.</p>"}
+function rendreFournisseurs(){listeFournisseurs.innerHTML=fournisseurs.map(f=>{let ds=dettes.filter(d=>d.fournisseurId===f.id),total=ds.filter(d=>!d.paye).reduce((s,d)=>s+d.montant,0);return `<div class="carte"><b>${esc(f.nom)}</b><div class="muted">${esc(f.tel)||"Pas de téléphone"}</div><div class="danger" style="font-weight:900">Dette : ${fmt(total)}</div>${ds.filter(d=>!d.paye).map(d=>`<div class="ligne"><div class="infos">${esc(d.motif)||"Dette"}<div class="muted">${d.date}</div></div><strong>${fmt(d.montant)}</strong>${d.photo?`<button class="btn outline" style="max-width:50px" onclick="afficherPreuve('${d.photo}')">📷</button>`:""}<button class="btn outline" style="max-width:80px" onclick="payerDette('${d.id}')">Payé</button></div>`).join("")}</div>`}).join("")||"<p class='muted'>Aucun fournisseur.</p>"}
 function ouvrirInventaire(){invTemp=produits.map(p=>({id:p.id,compte:p.stock}));invListe.innerHTML=invTemp.map((x,i)=>{let p=produits.find(q=>q.id===x.id);return `<div class="ligne"><div class="infos"><b>${esc(p.nom)}</b><div class="muted">Stock système : ${p.stock}</div></div><input id="inv${i}" type="number" step=".01" value="${p.stock}" style="max-width:110px"></div>`}).join("");modal("m-inventaire")}
 function sauverInventaire(){invTemp.forEach((x,i)=>{x.compte=Number(document.getElementById("inv"+i).value)});let ecarts=[];invTemp.forEach(x=>{let p=produits.find(q=>q.id===x.id);if(p&&p.stock!==x.compte){let delta=x.compte-p.stock;ecarts.push({date:today(),produitId:p.id,ancien:p.stock,nouveau:x.compte});ajouterMouvementStock(p.id,delta,"inventaire")}});recalculerStocks();inventaires.push({id:id(),date:today(),ecarts});saveAll();fermer("m-inventaire");rendreStock();show("📋 Inventaire enregistré")}
 function ouvrirImport(){modal("m-import")}
@@ -890,7 +928,6 @@ function basculerTheme(){config.theme=config.theme==="sombre"?"clair":"sombre";s
 function appliquerTheme(){document.body.classList.toggle("dark",config.theme==="sombre")}
 function rafraichir(){document.getElementById("titreApp").textContent="🏪 "+config.nom;let n=produits.filter(p=>p.stock<=Number(config.seuil)).length;badgeAlerte.style.display=n?"block":"none";badgeAlerte.textContent="⚠️ "+n;badgePremium.style.display=calculPremium().actif?"none":"block"}
 function calculPremium(){let e=Number(essai)||Date.now();let finEssai=e+14*86400000;let essaiOk=Date.now()<finEssai,p=Number(premiumUntil||0)>Date.now();let joursRestants=Math.max(0,Math.ceil((finEssai-Date.now())/86400000));return{actif:essaiOk||p,essaiOk,premiumActif:p,joursRestants}}
-function checksum(s){let h=0;for(let c of s)h=(h*31+c.charCodeAt(0))%100000;return String(h).padStart(4,"0").slice(-4)}
 // L'ancienne activation Premium par clé locale (calculable côté client) a été retirée :
 // le Premium est désormais débloqué uniquement par le webhook Kkiapay → table Supabase `subscriptions`,
 // lu automatiquement par bsPullPremium()/bsPremiumState(). Rien ne doit plus écrire "expirationPremium"
@@ -929,19 +966,25 @@ async function verifierActivationPremium(manuel){
 function bsPinRestant(cle){let d=get(cle,{n:0,jusqu:0});return Date.now()<d.jusqu?Math.ceil((d.jusqu-Date.now())/1000):0}
 function bsPinEchec(cle){let d=get(cle,{n:0,jusqu:0});d.n=(d.n||0)+1;if(d.n>=5)d.jusqu=Date.now()+Math.min(300000,15000*Math.pow(2,d.n-5));set(cle,d)}
 function bsPinReussite(cle){set(cle,{n:0,jusqu:0})}
-function ouvrirPin(){currentPin="";pinMode=pin?"normal":"create";pinTitre.textContent=pin?"Entre ton code PIN":"Crée ton code PIN";pinForgot.style.display=pin?"block":"none";secretZone.style.display="none";supportZone.style.display="none";pinScreen.classList.add("on");rendreDots();keys.innerHTML=["1","2","3","4","5","6","7","8","9","","0","⌫"].map(k=>k?`<button onclick="touche('${k}')">${k}</button>`:"<div></div>").join("")}
+function ouvrirPin(){currentPin="";pinMode=pin?"normal":"create";pinTitre.textContent=pin?"Entre ton code PIN":"Crée ton code PIN";pinForgot.style.display=pin?"block":"none";document.getElementById("pinRecupZone").style.display="none";pinScreen.classList.add("on");rendreDots();keys.innerHTML=["1","2","3","4","5","6","7","8","9","","0","⌫"].map(k=>k?`<button onclick="touche('${k}')">${k}</button>`:"<div></div>").join("")}
 function rendreDots(){dots.innerHTML=[0,1,2,3].map(i=>`<span class="dot ${currentPin.length>i?"on":""}"></span>`).join("")}
 function touche(k){if(k==="⌫"){currentPin=currentPin.slice(0,-1);return rendreDots()}if(currentPin.length>=4)return;currentPin+=k;rendreDots();if(currentPin.length===4)setTimeout(validerPin,100)}
-function validerPin(){if(pinMode==="create"){pin=currentPin;set("pinBoutique",pin);sessionStorage.setItem("bsUnlocked","1");pinForgot.style.display="block";show("Définis maintenant ton mot secret");pinMode="secretSetup";currentPin="";rendreDots();pinTitre.textContent="PIN enregistré";setTimeout(()=>{pinScreen.classList.remove("on");ouvrirMotSecret()},500);return}
+function validerPin(){if(pinMode==="create"){pin=currentPin;set("pinBoutique",pin);sessionStorage.setItem("bsUnlocked","1");pinForgot.style.display="block";currentPin="";rendreDots();pinTitre.textContent="PIN enregistré";setTimeout(()=>{pinScreen.classList.remove("on");go("stock")},500);return}
  let att=bsPinRestant("bsPinBlocageBoutique");if(att){show("⏳ Trop d'essais, réessaie dans "+att+"s");currentPin="";rendreDots();return}
  if(currentPin===pin){bsPinReussite("bsPinBlocageBoutique");sessionStorage.setItem("bsUnlocked","1");pinScreen.classList.remove("on");go(document.querySelector(".ecran.actif")?.id.replace("e-","")||"stock")}else{bsPinEchec("bsPinBlocageBoutique");show("❌ PIN incorrect");currentPin="";rendreDots()}}
-function ouvrirMotSecret(){secret=prompt("Définis un mot secret de récupération PIN :");if(secret){set("motSecretPIN",secret.trim());show("✅ Mot secret enregistré")}go("stock")}
-function changerPin(){if(!pin)return ouvrirPin();let old=prompt("Ancien PIN :");if(old!==pin)return show("❌ PIN incorrect");let np=prompt("Nouveau PIN à 4 chiffres :");if(!/^\d{4}$/.test(np))return show("❌ PIN invalide");pin=np;set("pinBoutique",pin);let ns=prompt("Nouveau mot secret :");if(ns){secret=ns.trim();set("motSecretPIN",secret)}show("✅ PIN mis à jour")}
-function recupPin(){secretZone.style.display="block";supportZone.style.display="none"}
-function verifierSecret(){if(secretInput.value.trim()&&secret&&secretInput.value.trim()===secret){let np=prompt("Nouveau PIN à 4 chiffres :");if(!/^\d{4}$/.test(np))return show("❌ PIN invalide");pin=np;set("pinBoutique",pin);pinScreen.classList.remove("on");show("✅ PIN réinitialisé")}else show("❌ Mot secret incorrect")}
-function recupSupport(){secretZone.style.display="none";supportZone.style.display="block";deviceCode.textContent=device}
-function envoyerRecup(){window.open("https://wa.me/"+SUPPORT+"?text="+encodeURIComponent("Récupération PIN Boutik Safe. Code appareil : "+device),"_blank")}
-function validerMaitre(){let attendu=checksum(device+SECRET_SUPPORT+"PIN");if(masterCode.value.trim()!==attendu)return show("❌ Code incorrect");let np=prompt("Nouveau PIN à 4 chiffres :");if(!/^\d{4}$/.test(np))return show("❌ PIN invalide");pin=np;set("pinBoutique",pin);pinScreen.classList.remove("on");show("✅ PIN réinitialisé")}
+function changerPin(){if(!pin)return ouvrirPin();let old=prompt("Ancien PIN :");if(old!==pin)return show("❌ PIN incorrect");let np=prompt("Nouveau PIN à 4 chiffres :");if(!/^\d{4}$/.test(np))return show("❌ PIN invalide");pin=np;set("pinBoutique",pin);show("✅ PIN mis à jour")}
+async function recupPin(){
+  if(!bsUser||!bsUser.email)return show("❌ Connecte-toi d'abord à ton compte pour récupérer ton PIN.");
+  let z=document.getElementById("pinRecupZone"),m=document.getElementById("pinRecupMsg");
+  try{
+    await fetch(SUPABASE_URL_V2+'/auth/v1/recover',{method:'POST',headers:authHeaders(),body:JSON.stringify({email:bsUser.email,redirect_to:'https://boutiksafe.vercel.app/reset-pin'})});
+    m.textContent="📨 Un e-mail de confirmation a été envoyé à "+bsUser.email+". Ouvre-le pour définir ton nouveau PIN.";
+  }catch(e){
+    m.textContent="❌ Impossible d'envoyer l'e-mail. Vérifie ta connexion.";
+  }
+  z.style.display="block";
+}
+
 function testerNotification(){if(!("Notification"in window))return show("Notifications non supportées");Notification.requestPermission().then(p=>{if(p==="granted")new Notification(config.nom,{body:"Test de notification Boutik Safe"});else show("Permission refusée")})}
 function notifierStock(){if("Notification"in window&&Notification.permission==="granted"){let ps=produits.filter(p=>p.stock<=Number(config.seuil));if(ps.length)new Notification(config.nom,{body:"Stock faible : "+ps.map(p=>p.nom).join(", ")})}}
 appliquerTheme();
@@ -983,7 +1026,9 @@ function bsCheckRecoveryLink(){
     document.getElementById('authLoginForm').style.display='none';
     document.getElementById('authSignupForm').style.display='none';
     document.getElementById('authRecoveryForm').style.display='none';
-    document.getElementById('authNewPasswordForm').style.display='block';
+    let estRecupPin=location.pathname.indexOf('reset-pin')!==-1;
+    document.getElementById('authNewPasswordForm').style.display=estRecupPin?'none':'block';
+    document.getElementById('authNewPinForm').style.display=estRecupPin?'block':'none';
     document.getElementById('tabLogin').classList.remove('on');
     document.getElementById('tabSignup').classList.remove('on');
     return true;
@@ -1002,6 +1047,24 @@ async function definirNouveauMotDePasse(){
     document.getElementById('authNewPasswordForm').style.display='none';
     authMode('login');
     authMessage('✅ Mot de passe mis à jour. Connecte-toi avec ton nouveau mot de passe.');
+  }catch(e){
+    authMessage('❌ '+e.message,true);
+  }
+}
+async function definirNouveauPinRecup(){
+  authClear();
+  let np=document.getElementById('newPinRecup').value.trim();
+  if(!/^\d{4}$/.test(np))return authMessage('❌ Le PIN doit contenir exactement 4 chiffres.',true);
+  try{
+    // Le token de récupération prouve la possession de l'e-mail du compte ; on l'utilise
+    // simplement pour vérifier sa validité auprès de Supabase avant d'appliquer le nouveau PIN local.
+    let r=await fetch(SUPABASE_URL_V2+'/auth/v1/user',{headers:{'apikey':SUPABASE_PUBLISHABLE_KEY_V2,'Authorization':'Bearer '+bsRecoveryParams.access_token}});
+    if(!r.ok)throw new Error('Lien de récupération invalide ou expiré. Redemande un e-mail.');
+    pin=np;set('pinBoutique',pin);
+    history.replaceState(null,'',location.pathname+location.search);
+    document.getElementById('authNewPinForm').style.display='none';
+    document.getElementById('authScreen').classList.add('hidden');
+    show('✅ PIN de gestion réinitialisé.');
   }catch(e){
     authMessage('❌ '+e.message,true);
   }
@@ -1096,16 +1159,23 @@ async function bsUpsert(table,rows){if(!bsClient||!bsUser||!rows?.length)return;
 function bsUuid(){return crypto?.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{let r=Math.random()*16|0,v=c==='x'?r:(r&3|8);return v.toString(16)})}
 function bsEnsureIds(){for(const arr of [produits,ventes,credits,fournisseurs,dettes,mouvements,inventaires])for(const x of arr){if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x.id)){x.id=bsUuid()}}saveAllNoSync();}
 function saveAllNoSync(){set('produits',produits);set('ventes',ventes);set('credits',credits);set('mouvementsCaisse',mouvements);set('fournisseurs',fournisseurs);set('dettesFournisseurs',dettes);set('inventaires',inventaires)}
-async function bsSync(){if(bsSyncBusy||!bsClient||!bsUser)return;bsSyncBusy=true;try{bsEnsureIds();await bsUpsert('produits',produits.map(p=>({id:p.id,nom:p.nom,prix:Number(p.prix)||0,achat:Number(p.achat)||0,code_barre:p.codeBarre||null,emoji:p.emoji||null,photo:p.photo||null,peremption:p.peremption||null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()})));await bsUpsert('mouvements_stock',mouvementsStock.map(m=>({id:m.id,produit_id:m.produitId,delta:Number(m.delta)||0,type:m.type||'',vendeur_nom:m.auteur||'',vente_id:m.venteId||null,date:m.date?new Date(m.date).toISOString():new Date().toISOString()})));await bsUpsert('vendeurs',[]);await bsUpsert('credits',credits.map(c=>({id:c.id,client_nom:c.client||'',montant:Number(c.montant)||0,paye:!!c.paye,date:c.date?new Date(c.date).toISOString():new Date().toISOString()})));await bsUpsert('dettes',dettes.map(d=>({id:d.id,fournisseur_nom:(fournisseurs.find(f=>f.id===d.fournisseurId)||{}).nom||'',montant:Number(d.montant)||0,motif:d.motif||'',paye:!!d.paye,date:d.date?new Date(d.date).toISOString():new Date().toISOString()})));await bsUpsert('ventes',ventes.map(v=>({id:v.id,vendeur_nom:v.vendeurNom||'',date:new Date(v.date).toISOString(),total:Number(v.total)||0,created_at:new Date(v.date).toISOString()})));let lignes=[];ventes.forEach(v=>(v.articles||[]).forEach((a,i)=>lignes.push({id:bsUuidFromString(v.id+':'+i),vente_id:v.id,produit_nom:a.nom,quantite:Number(a.quantite)||0,prix:Number(a.prix)||0,achat:Number(a.achat)||0,user_id:bsUser.id})));if(lignes.length)await bsClient.from('ventes_lignes').upsert(lignes);let facts=get('facturesRecentes',[]).map(f=>({id:bsUuid(),numero:f.numero,client:f.client||'',date:new Date(f.date).toISOString(),total:Number(f.total)||0,recu:f.recu==null?null:Number(f.recu),monnaie:f.monnaie==null?null:Number(f.monnaie),articles:f.articles||[],created_at:new Date(f.date).toISOString(),user_id:bsUser.id}));if(facts.length)await bsClient.from('factures').upsert(facts);await bsBuildJournal();}finally{bsSyncBusy=false}}
+async function bsSync(){if(bsSyncBusy||!bsClient||!bsUser)return;bsSyncBusy=true;try{bsEnsureIds();await bsUpsert('produits',produits.map(p=>({id:p.id,nom:p.nom,prix:Number(p.prix)||0,achat:Number(p.achat)||0,code_barre:p.codeBarre||null,emoji:p.emoji||null,photo:p.photo||null,peremption:p.peremption||null,created_at:new Date().toISOString(),updated_at:new Date().toISOString()})));await bsUpsert('mouvements_stock',mouvementsStock.map(m=>({id:m.id,produit_id:m.produitId,delta:Number(m.delta)||0,type:m.type||'',vendeur_nom:m.auteur||'',vente_id:m.venteId||null,date:m.date?new Date(m.date).toISOString():new Date().toISOString()})));await bsUpsert('vendeurs',[]);await bsUpsert('fournisseurs',fournisseurs.map(f=>({id:f.id,nom:f.nom||'',tel:f.tel||''})));await bsUpsert('credits',credits.map(c=>({id:c.id,client_nom:c.client||'',numero:c.numero||'',montant:Number(c.montant)||0,paye:!!c.paye,photo:c.photo||null,date:c.date?new Date(c.date).toISOString():new Date().toISOString()})));await bsUpsert('dettes',dettes.map(d=>({id:d.id,fournisseur_id:d.fournisseurId||null,fournisseur_nom:(fournisseurs.find(f=>f.id===d.fournisseurId)||{}).nom||'',montant:Number(d.montant)||0,motif:d.motif||'',paye:!!d.paye,photo:d.photo||null,date:d.date?new Date(d.date).toISOString():new Date().toISOString()})));await bsUpsert('mouvements_caisse',mouvements.map(m=>({id:m.id,type:m.type||'',montant:Number(m.montant)||0,motif:m.motif||'',photo:m.photo||null,date:m.date?new Date(m.date).toISOString():new Date().toISOString()})));await bsUpsert('ventes',ventes.map(v=>({id:v.id,vendeur_nom:v.vendeurNom||'',date:new Date(v.date).toISOString(),total:Number(v.total)||0,created_at:new Date(v.date).toISOString()})));let lignes=[];ventes.forEach(v=>(v.articles||[]).forEach((a,i)=>lignes.push({id:bsUuidFromString(v.id+':'+i),vente_id:v.id,produit_nom:a.nom,quantite:Number(a.quantite)||0,prix:Number(a.prix)||0,achat:Number(a.achat)||0,user_id:bsUser.id})));if(lignes.length)await bsClient.from('ventes_lignes').upsert(lignes);let facts=get('facturesRecentes',[]).map(f=>({id:bsUuidFromString('facture:'+f.numero),numero:f.numero,client:f.client||'',date:new Date(f.date).toISOString(),total:Number(f.total)||0,recu:f.recu==null?null:Number(f.recu),monnaie:f.monnaie==null?null:Number(f.monnaie),articles:f.articles||[],created_at:new Date(f.date).toISOString(),user_id:bsUser.id}));if(facts.length)await bsClient.from('factures').upsert(facts);await bsBuildJournal();}finally{bsSyncBusy=false}}
 async function bsBuildJournal(){if(!bsClient||!bsUser)return;let rows=[];ventes.forEach(v=>{rows.push({id:bsUuid(),date:new Date(v.date).toISOString(),compte_debit:'571',libelle_debit:'Caisse',compte_credit:'701',libelle_credit:'Ventes',montant:Number(v.total)||0,piece_reference:v.id,created_at:new Date(v.date).toISOString(),user_id:bsUser.id})});if(rows.length)await bsClient.from('ecritures_comptables').upsert(rows);}
 function bsLocalHasData(){return produits.length>0||ventes.length>0||credits.length>0||dettes.length>0||fournisseurs.length>0||mouvements.length>0;}
 function bsUuidFromString(str){let h1=0x811c9dc5,h2=0x9e3779b9,h3=0x85ebca6b,h4=0xc2b2ae35;for(let i=0;i<str.length;i++){let c=str.charCodeAt(i);h1=Math.imul(h1^c,16777619);h2=Math.imul(h2^c,2246822507);h3=Math.imul(h3^c,3266489909);h4=Math.imul(h4^c,668265263)}let hex=[h1,h2,h3,h4].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');return hex.slice(0,8)+'-'+hex.slice(8,12)+'-4'+hex.slice(13,16)+'-8'+hex.slice(17,20)+'-'+hex.slice(20,32);}
-async function bsPull(){if(!bsClient||!bsUser)return false;try{const [pr,vr,prof,mr]=await Promise.all([bsClient.from('produits').select('*').eq('user_id',bsUser.id),bsClient.from('ventes').select('*').eq('user_id',bsUser.id),bsClient.from('profiles').select('intervenants').eq('id',bsUser.id).maybeSingle(),bsClient.from('mouvements_stock').select('*').eq('user_id',bsUser.id)]);if(pr.error)console.warn('pull produits',pr.error.message);if(vr.error)console.warn('pull ventes',vr.error.message);if(mr.error)console.warn('pull mouvements_stock',mr.error.message);if(!prof.error&&Array.isArray(prof.data?.intervenants)){set('intervenants',prof.data.intervenants);rendreIntervenants();}const cloudProducts=pr.data||[],cloudSales=vr.data||[],cloudMouvements=mr.data||[];const cloudHasData=cloudProducts.length>0||cloudSales.length>0;if(!cloudHasData){rendreVente();rendreHistorique();return false;}if(cloudProducts.length){produits=cloudProducts.map(p=>({id:p.id,nom:p.nom,prix:Number(p.prix)||0,achat:Number(p.achat)||0,stock:0,codeBarre:p.code_barre||'',emoji:p.emoji||'📦',photo:p.photo||'',peremption:p.peremption||''}));set('produits',produits)}else{produits=[];set('produits',produits)}
+async function bsPull(){if(!bsClient||!bsUser)return false;try{const [pr,vr,prof,mr,fr,cr,dr,mcr,far]=await Promise.all([bsClient.from('produits').select('*').eq('user_id',bsUser.id),bsClient.from('ventes').select('*').eq('user_id',bsUser.id),bsClient.from('profiles').select('intervenants').eq('id',bsUser.id).maybeSingle(),bsClient.from('mouvements_stock').select('*').eq('user_id',bsUser.id),bsClient.from('fournisseurs').select('*').eq('user_id',bsUser.id),bsClient.from('credits').select('*').eq('user_id',bsUser.id),bsClient.from('dettes').select('*').eq('user_id',bsUser.id),bsClient.from('mouvements_caisse').select('*').eq('user_id',bsUser.id),bsClient.from('factures').select('*').eq('user_id',bsUser.id)]);if(pr.error)console.warn('pull produits',pr.error.message);if(vr.error)console.warn('pull ventes',vr.error.message);if(mr.error)console.warn('pull mouvements_stock',mr.error.message);if(fr.error)console.warn('pull fournisseurs',fr.error.message);if(cr.error)console.warn('pull credits',cr.error.message);if(dr.error)console.warn('pull dettes',dr.error.message);if(mcr.error)console.warn('pull mouvements_caisse',mcr.error.message);if(far.error)console.warn('pull factures',far.error.message);if(!prof.error&&Array.isArray(prof.data?.intervenants)){set('intervenants',prof.data.intervenants);rendreIntervenants();}const cloudProducts=pr.data||[],cloudSales=vr.data||[],cloudMouvements=mr.data||[],cloudFournisseurs=fr.data||[],cloudCredits=cr.data||[],cloudDettes=dr.data||[],cloudMvCaisse=mcr.data||[],cloudFactures=far.data||[];const cloudHasData=cloudProducts.length>0||cloudSales.length>0||cloudFournisseurs.length>0||cloudCredits.length>0||cloudDettes.length>0||cloudMvCaisse.length>0;if(!cloudHasData){rendreVente();rendreHistorique();return false;}if(cloudProducts.length){produits=cloudProducts.map(p=>({id:p.id,nom:p.nom,prix:Number(p.prix)||0,achat:Number(p.achat)||0,stock:0,codeBarre:p.code_barre||'',emoji:p.emoji||'📦',photo:p.photo||'',peremption:p.peremption||''}));set('produits',produits)}else{produits=[];set('produits',produits)}
 // Fusion des mouvements de stock : on garde tout (local + cloud), dédoublonné par id, plutôt que
 // de faire confiance à un simple nombre. Ainsi, deux appareils ayant vendu hors-ligne en même temps
 // voient leurs deux mouvements additionnés au lieu que l'un efface le travail de l'autre.
 let mvMap=new Map();mouvementsStock.forEach(m=>mvMap.set(m.id,m));cloudMouvements.forEach(m=>mvMap.set(m.id,{id:m.id,produitId:m.produit_id,delta:Number(m.delta)||0,type:m.type||'',auteur:m.vendeur_nom||'',venteId:m.vente_id||null,date:m.date}));mouvementsStock=[...mvMap.values()];set('mouvementsStock',mouvementsStock);
-if(cloudSales.length){const {data:ls,error:le}=await bsClient.from('ventes_lignes').select('*').eq('user_id',bsUser.id);if(le)console.warn('pull ventes_lignes',le.message);const lignes=ls||[];ventes=cloudSales.map(v=>({id:v.id,date:v.date,total:Number(v.total)||0,vendeurNom:v.vendeur_nom||'',articles:lignes.filter(l=>l.vente_id===v.id).map(l=>({nom:l.produit_nom,quantite:Number(l.quantite)||0,prix:Number(l.prix)||0,achat:Number(l.achat)||0}))}));set('ventes',ventes)}else{ventes=[];set('ventes',ventes)}recalculerStocks();rendreVente();rafraichir();rendreHistorique();return true}catch(e){console.warn('pull cloud',e);return false;}}
+// Même logique de fusion par id (local + cloud) pour fournisseurs, crédits clients, dettes fournisseurs,
+// mouvements de caisse et factures — aucune donnée d'un autre appareil n'est perdue.
+let fMap=new Map();fournisseurs.forEach(f=>fMap.set(f.id,f));cloudFournisseurs.forEach(f=>fMap.set(f.id,{id:f.id,nom:f.nom||'',tel:f.tel||''}));fournisseurs=[...fMap.values()];set('fournisseurs',fournisseurs);
+let cMap=new Map();credits.forEach(c=>cMap.set(c.id,c));cloudCredits.forEach(c=>cMap.set(c.id,{id:c.id,client:c.client_nom||'',numero:c.numero||'',montant:Number(c.montant)||0,paye:!!c.paye,photo:c.photo||'',date:c.date?String(c.date).slice(0,10):today(),datePaiement:c.paye?(c.date_paiement||null):null}));credits=[...cMap.values()];set('credits',credits);
+let dMap=new Map();dettes.forEach(d=>dMap.set(d.id,d));cloudDettes.forEach(d=>dMap.set(d.id,{id:d.id,fournisseurId:d.fournisseur_id||null,montant:Number(d.montant)||0,motif:d.motif||'',paye:!!d.paye,photo:d.photo||'',date:d.date?String(d.date).slice(0,10):today()}));dettes=[...dMap.values()];set('dettes',dettes);
+let mcMap=new Map();mouvements.forEach(m=>mcMap.set(m.id,m));cloudMvCaisse.forEach(m=>mcMap.set(m.id,{id:m.id,type:m.type||'',montant:Number(m.montant)||0,motif:m.motif||'',photo:m.photo||'',date:m.date}));mouvements=[...mcMap.values()];set('mouvements',mouvements);
+let faMap=new Map();get('facturesRecentes',[]).forEach(f=>faMap.set(f.numero,f));cloudFactures.forEach(f=>faMap.set(f.numero,{numero:f.numero,date:f.date,client:f.client||'',articles:f.articles||[],total:Number(f.total)||0,recu:f.recu==null?null:Number(f.recu),monnaie:f.monnaie==null?null:Number(f.monnaie)}));set('facturesRecentes',[...faMap.values()].sort((a,b)=>new Date(b.date)-new Date(a.date)));
+if(cloudSales.length){const {data:ls,error:le}=await bsClient.from('ventes_lignes').select('*').eq('user_id',bsUser.id);if(le)console.warn('pull ventes_lignes',le.message);const lignes=ls||[];ventes=cloudSales.map(v=>({id:v.id,date:v.date,total:Number(v.total)||0,vendeurNom:v.vendeur_nom||'',articles:lignes.filter(l=>l.vente_id===v.id).map(l=>({nom:l.produit_nom,quantite:Number(l.quantite)||0,prix:Number(l.prix)||0,achat:Number(l.achat)||0}))}));set('ventes',ventes)}else{ventes=[];set('ventes',ventes)}recalculerStocks();rendreVente();rafraichir();rendreHistorique();rendreFournisseurs();rendreCredit();rendreCaisse();rendreFacturesRecentes();return true}catch(e){console.warn('pull cloud',e);return false;}}
 window.bsSync=async()=>{if(bsCloudReady){await bsSync();}};
 function bsUpdateAccountUI(){let el=document.getElementById('cloudAccountStatus');if(el)el.innerHTML=bsUser?'<span class="bs-account-badge">✓ '+esc(bsUser.email||'Compte connecté')+'</span>':'Compte non connecté';}
 function ouvrirCompteCloud(){if(!bsUser){document.getElementById('authScreen').classList.remove('hidden');return}show('Compte connecté : '+(bsUser.email||''));}
